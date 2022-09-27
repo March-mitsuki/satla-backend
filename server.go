@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"vvvorld/controller"
@@ -38,6 +39,14 @@ func main() {
 	r.GET("/ws/:roomid", func(c *gin.Context) {
 		roomid := c.Param("roomid")
 		controller.WsController(c, roomid)
+	})
+	r.POST("/new_project", func(c *gin.Context) {
+		buffer := make([]byte, 2048)
+		num, _ := c.Request.Body.Read(buffer)
+		fmt.Println(string(buffer[0:num]))
+		c.JSON(200, gin.H{
+			"msg": "create new project successfully",
+		})
 	})
 
 	r.Run(":8080")
