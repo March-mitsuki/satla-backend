@@ -3,6 +3,8 @@ package main
 import (
 	"time"
 
+	"vvvorld/controller"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +34,10 @@ func main() {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
+	})
+	r.GET("/ws/:roomid", func(c *gin.Context) {
+		roomid := c.Param("roomid")
+		controller.WsController(c, roomid)
 	})
 
 	r.Run(":8080")
