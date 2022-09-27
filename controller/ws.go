@@ -1,13 +1,15 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
