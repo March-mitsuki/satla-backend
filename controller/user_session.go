@@ -64,7 +64,8 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 	// 测试用设置过期时间为1分钟
-	rdbSetErr := rdb.Set(c, uuid, "ok", 1*time.Minute).Err()
+	// rdbSetErr := rdb.Set(c, uuid, "ok", 1*time.Minute).Err()
+	rdbSetErr := rdb.Set(c, uuid, "ok", 12*time.Hour).Err()
 	if rdbSetErr != nil {
 		fmt.Println("redis set session error")
 		c.JSON(200, gin.H{
