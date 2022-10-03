@@ -25,3 +25,10 @@ type Project struct {
 	Pointman    string `gorm:"not null;type:varchar(64)"`
 	CreatedBy   string `gorm:"not null;type:varchar(128)"`
 }
+
+type User struct {
+	gorm.Model
+	UserName     string `gorm:"not null;type:varchar(128)"`
+	Email        string `gorm:"not null;type:varchar(256);uniqueIndex"`
+	PasswordHash string `gorm:"not null"`
+}

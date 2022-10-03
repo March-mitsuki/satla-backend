@@ -4,6 +4,7 @@ import (
 	"time"
 	"vvvorld/model"
 
+	"github.com/go-redis/redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -24,6 +25,9 @@ func connectionDB() (*gorm.DB, error) {
 }
 
 var db, _ = connectionDB()
+var rdb = redis.NewClient(&redis.Options{
+	Addr: "localhost:6379",
+})
 
 func TestCreate() (model.Subtitle, error) {
 	subtitle := model.Subtitle{
