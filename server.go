@@ -30,7 +30,7 @@ func main() {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"http://localhost:3131"},
-		AllowMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{
 			"Origin",
 			"Content-Length",
@@ -88,7 +88,7 @@ func main() {
 	})
 	api.POST("/login", controller.LoginUser)
 	api.POST("/signup", controller.SignupUser)
-	api.POST("/logout", controller.LogoutUser)
+	api.DELETE("/logout", controller.LogoutUser)
 
 	r.NoRoute(func(c *gin.Context) {
 		num, err := controller.CheckLogin(c)

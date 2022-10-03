@@ -131,6 +131,7 @@ func SignupUser(c *gin.Context) {
 func LogoutUser(c *gin.Context) {
 	s := sessions.Default(c)
 	s.Delete("loginId")
+	s.Save()
 	c.Redirect(303, "/login")
 	return
 }

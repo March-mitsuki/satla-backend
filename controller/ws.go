@@ -14,7 +14,11 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		return origin == "http://localhost:3131"
+		if origin == "http://192.168.64.3:8080" || origin == "http://localhost:3131" {
+			return true
+		} else {
+			return false
+		}
 	},
 }
 
