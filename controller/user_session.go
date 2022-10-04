@@ -144,8 +144,8 @@ func LogoutUser(c *gin.Context) {
 }
 
 func CheckLogin(c *gin.Context) (uint, error) {
-	// return 0 -> redirect to login page
-	// return 1 -> go next
+	// return 0 -> not yet login
+	// return 1 -> login
 	s := sessions.Default(c)
 	sInfo := s.Get("loginId")
 	if sInfo == nil {
