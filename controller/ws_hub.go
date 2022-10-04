@@ -2,7 +2,7 @@ package controller
 
 import "fmt"
 
-var h = hub{
+var WsHub = hub{
 	broadcast:  make(chan message),
 	castother:  make(chan message),
 	castself:   make(chan message),
@@ -11,7 +11,7 @@ var h = hub{
 	rooms:      make(map[string]map[*connection]bool),
 }
 
-func (h *hub) run() {
+func (h *hub) Run() {
 	for {
 		select {
 		case s := <-h.register:

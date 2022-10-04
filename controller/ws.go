@@ -25,7 +25,7 @@ var upgrader = websocket.Upgrader{
 func (s subscription) readPump() {
 	c := s.conn
 	defer func() {
-		h.unregister <- s
+		WsHub.unregister <- s
 		c.ws.Close()
 		fmt.Println("ws close by read pump")
 	}()
@@ -43,9 +43,9 @@ func (s subscription) readPump() {
 		cmd := unmarshal.Head.Cmd
 		switch cmd {
 		case "addSubtitle":
-			h.broadcast <- m
+			WsHub.broadcast <- m
 		case "addUser":
-			h.castother <- m
+			WsHub.castother <- m
 		}
 	}
 }
@@ -75,6 +75,7 @@ func (s subscription) writePump() {
 }
 
 func WsController(c *gin.Context, roomid string) {
+	fmt.Println("ws controller called")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -87,7 +88,7 @@ func WsController(c *gin.Context, roomid string) {
 
 	conn := &connection{send: make(chan []byte, 256), ws: ws}
 	sub := subscription{conn: conn, room: roomid}
-	h.register <- sub
+	WsHub.register <- sub
 
 	go sub.writePump()
 	sub.readPump()

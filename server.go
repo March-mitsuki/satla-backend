@@ -26,6 +26,7 @@ func directAccess(c *gin.Context) {
 }
 
 func main() {
+	go controller.WsHub.Run()
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
