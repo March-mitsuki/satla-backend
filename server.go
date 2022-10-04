@@ -74,14 +74,14 @@ func main() {
 	})
 	r.GET("/ws/:roomid", func(c *gin.Context) {
 		roomid := c.Param("roomid")
-		num, err := controller.CheckLogin(c)
-		if err != nil {
-			fmt.Printf("check login err: %v \n", err)
-			return
-		}
-		if num == 0 {
-			return
-		}
+		// num, err := controller.CheckLogin(c)
+		// if err != nil {
+		// 	fmt.Printf("check login err: %v \n", err)
+		// 	return
+		// }
+		// if num == 0 {
+		// 	return
+		// }
 		controller.WsController(c, roomid)
 		return
 	})

@@ -27,6 +27,7 @@ func (s subscription) readPump() {
 	defer func() {
 		h.unregister <- s
 		c.ws.Close()
+		fmt.Println("ws close by read pump")
 	}()
 
 	for {
@@ -57,6 +58,7 @@ func (s subscription) writePump() {
 	c := s.conn
 	defer func() {
 		c.ws.Close()
+		fmt.Println("ws close by write punp")
 	}()
 
 	for {
@@ -78,8 +80,10 @@ func WsController(c *gin.Context, roomid string) {
 		fmt.Println(err)
 		return
 	}
-	defer ws.Close()
-	defer fmt.Println("ws closed")
+	defer func() {
+		ws.Close()
+		fmt.Println("ws close by ws controller")
+	}()
 
 	conn := &connection{send: make(chan []byte, 256), ws: ws}
 	sub := subscription{conn: conn, room: roomid}
