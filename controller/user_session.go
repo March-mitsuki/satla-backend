@@ -35,7 +35,7 @@ func LoginUser(c *gin.Context) {
 		fmt.Println("不存在该用户或者尚未注册")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 4101,
+			"status": statusLoginNoUser,
 			"msg":    "no user error",
 		})
 		return
@@ -44,7 +44,7 @@ func LoginUser(c *gin.Context) {
 		fmt.Println("密码不正确")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 4102,
+			"status": statusLoginIncorrectPass,
 			"msg":    "incorrect password",
 		})
 		return
@@ -58,7 +58,7 @@ func LoginUser(c *gin.Context) {
 		fmt.Println("session save error")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 5101,
+			"status": statusLoginSessionSaveErr,
 			"msg":    "save session error",
 		})
 		return
@@ -70,7 +70,7 @@ func LoginUser(c *gin.Context) {
 		fmt.Println("redis set session error")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 5102,
+			"status": statusLoginRdbSetErr,
 			"msg":    "redis set error",
 		})
 		return
@@ -93,7 +93,7 @@ func SignupUser(c *gin.Context) {
 		fmt.Println("已存在该用户,请直接登录")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 4201,
+			"status": statusSignupExistingUser,
 			"msg":    "existing user, please login",
 		})
 		return
@@ -105,7 +105,7 @@ func SignupUser(c *gin.Context) {
 		fmt.Println("hash化密码失败")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 5201,
+			"status": statusSignupEncryptPassErr,
 			"msg":    "encrypt password failed, please retry",
 		})
 		return
@@ -119,7 +119,7 @@ func SignupUser(c *gin.Context) {
 		fmt.Println("创建用户失败")
 		c.JSON(200, gin.H{
 			"code":   -1,
-			"status": 5202,
+			"status": statusSignupDbCreateErr,
 			"msg":    "create new user failed, please retry",
 		})
 		return
@@ -130,6 +130,13 @@ func SignupUser(c *gin.Context) {
 
 func LogoutUser(c *gin.Context) {
 	s := sessions.Default(c)
+	sInfo := s.Get("loginId")
+	if sInfo == nil {
+		fmt.Println("该用户已经退出登录")
+		c.Redirect(303, "/login")
+		return
+	}
+	rdb.Del(c, sInfo.(string))
 	s.Delete("loginId")
 	s.Save()
 	c.Redirect(303, "/login")
@@ -137,8 +144,8 @@ func LogoutUser(c *gin.Context) {
 }
 
 func CheckLogin(c *gin.Context) (uint, error) {
-	// 0 -> redirect to login page
-	// 1 -> go next
+	// return 0 -> redirect to login page
+	// return 1 -> go next
 	s := sessions.Default(c)
 	sInfo := s.Get("loginId")
 	if sInfo == nil {
