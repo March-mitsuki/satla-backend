@@ -36,15 +36,17 @@ func (s subscription) readPump() {
 			return
 		}
 		m := message{msg, s.room, s.conn}
-		var unmarshal subtitleData
-		json.Unmarshal(msg, &unmarshal)
-		fmt.Println("-----unmarshal------")
-		fmt.Println(unmarshal.Body)
-		cmd := unmarshal.Head.Cmd
+		cmd := json.Get(msg, "head", "cmd").ToString()
 		switch cmd {
 		case "addSubtitle":
+			var wsData wsSubtitleData
+			json.Unmarshal(msg, &wsData)
+			fmt.Printf("\n --parse add subtitle-- \n %+v \n", wsData)
 			WsHub.broadcast <- m
 		case "addUser":
+			var wsData wsAddUserData
+			json.Unmarshal(msg, &wsData)
+			fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
 			WsHub.castother <- m
 		}
 	}
