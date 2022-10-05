@@ -52,7 +52,8 @@ func LoginUser(c *gin.Context) {
 	_uuid, _ := uuid.NewRandom()
 	uuid := _uuid.String()
 	s := sessions.Default(c)
-	s.Set("loginId", uuid)
+	s.Set(cookieLoginId, uuid)
+	s.Set(cookieUserEmail, body.Email)
 	sessionSaveErr := s.Save()
 	if sessionSaveErr != nil {
 		fmt.Println("session save error")
@@ -130,14 +131,15 @@ func SignupUser(c *gin.Context) {
 
 func LogoutUser(c *gin.Context) {
 	s := sessions.Default(c)
-	sInfo := s.Get("loginId")
-	if sInfo == nil {
+	loginId := s.Get(cookieLoginId)
+	if loginId == nil {
 		fmt.Println("该用户已经退出登录")
 		c.Redirect(303, "/login")
 		return
 	}
-	rdb.Del(c, sInfo.(string))
-	s.Delete("loginId")
+	rdb.Del(c, loginId.(string))
+	s.Delete(cookieLoginId)
+	s.Delete(cookieUserEmail)
 	s.Save()
 	c.Redirect(303, "/login")
 	return
@@ -147,12 +149,12 @@ func CheckLogin(c *gin.Context) (uint, error) {
 	// return 0 -> not yet login
 	// return 1 -> login
 	s := sessions.Default(c)
-	sInfo := s.Get("loginId")
-	if sInfo == nil {
+	loginId := s.Get(cookieLoginId)
+	if loginId == nil {
 		fmt.Println("---请先登录---")
 		return 0, nil
 	}
-	_, rdbGetErr := rdb.Get(c, sInfo.(string)).Result()
+	_, rdbGetErr := rdb.Get(c, loginId.(string)).Result()
 	if rdbGetErr == redis.Nil {
 		fmt.Println("---session已过期---")
 		return 0, nil
@@ -160,6 +162,34 @@ func CheckLogin(c *gin.Context) (uint, error) {
 		fmt.Println("rbd 查找出错")
 		return 0, rdbGetErr
 	}
-	c.File("./dist")
 	return 1, nil
+}
+
+func CheckLOginMidllerware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		s := sessions.Default(c)
+		loginId := s.Get(cookieLoginId)
+		if loginId == nil {
+			c.AbortWithStatusJSON(403, gin.H{
+				"msg": "please login ahead",
+			})
+			fmt.Println("---[api]请先登录---")
+			return
+		}
+		_, rdbGetErr := rdb.Get(c, loginId.(string)).Result()
+		if rdbGetErr == redis.Nil {
+			c.AbortWithStatusJSON(403, gin.H{
+				"msg": "please login again",
+			})
+			fmt.Println("---[api]session已过期---")
+			return
+		} else if rdbGetErr != nil {
+			c.AbortWithStatusJSON(403, gin.H{
+				"msg": "please try again",
+			})
+			fmt.Println("---[api]rbd查找出错---")
+			return
+		}
+		c.Next()
+	}
 }

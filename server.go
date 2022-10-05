@@ -69,9 +69,15 @@ func main() {
 	})
 
 	r.GET("/test", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "server is running!",
-		})
+		type testMsg struct {
+			Code int    `json:"code"`
+			Msg  string `json:"msg"`
+		}
+		res := testMsg{
+			Code: 0,
+			Msg:  "server is running",
+		}
+		c.JSON(200, res)
 	})
 	r.GET("/ws/:roomid", func(c *gin.Context) {
 		roomid := c.Param("roomid")
@@ -88,6 +94,7 @@ func main() {
 	})
 
 	api := r.Group("/api")
+	api.Use(controller.CheckLOginMidllerware())
 	api.POST("/new_project", func(c *gin.Context) {
 		buffer := make([]byte, 2048)
 		num, _ := c.Request.Body.Read(buffer)
@@ -96,9 +103,14 @@ func main() {
 			"msg": "create new project successfully",
 		})
 	})
-	api.POST("/login", controller.LoginUser)
-	api.POST("/signup", controller.SignupUser)
-	api.DELETE("/logout", controller.LogoutUser)
+	api.GET("/userinfo", func(c *gin.Context) {
+
+	})
+
+	session := r.Group("/seesion")
+	session.POST("/login", controller.LoginUser)
+	session.POST("/signup", controller.SignupUser)
+	session.DELETE("/logout", controller.LogoutUser)
 
 	r.NoRoute(func(c *gin.Context) {
 		num, err := controller.CheckLogin(c)
