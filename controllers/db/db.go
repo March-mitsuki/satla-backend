@@ -1,7 +1,7 @@
-package controller
+package db
 
 import (
-	"time"
+	"fmt"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
@@ -24,23 +24,17 @@ func connectionDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-var db, _ = connectionDB()
-var rdb = redis.NewClient(&redis.Options{
+var Mdb, _ = connectionDB()
+var Rdb = redis.NewClient(&redis.Options{
 	Addr: "localhost:6379",
 })
 
-func TestCreate() (model.Subtitle, error) {
-	subtitle := model.Subtitle{
-		InputTime:    "26:67:91",
-		SendTime:     time.Now(),
-		ProjectId:    1,
-		ProjectName:  "default",
-		TranslatedBy: "三月",
+func GetAllSubtitles() ([]model.Subtitle, error) {
+	var subtitles []model.Subtitle
+	result := Mdb.Find(&subtitles)
+	if result.Error != nil {
+		fmt.Printf("get all subtitles err: %v \n", result.Error)
+		return nil, result.Error
 	}
-	createResult := db.Create(&subtitle)
-	if createResult.Error != nil {
-		subtitle.ID = 0
-		return subtitle, createResult.Error
-	}
-	return subtitle, nil
+	return subtitles, nil
 }

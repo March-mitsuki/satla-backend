@@ -1,8 +1,10 @@
-package controller
+package controllers
 
 import (
 	"errors"
 	"fmt"
+	"vvvorld/controllers/db"
+	"vvvorld/model"
 )
 
 func (rUser *roomUsers) addUser(roomid, uname string) {
@@ -44,6 +46,10 @@ func (m *message) handleAddUser() (string, error) {
 	}
 	fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
 	allRoomUsers.addUser(m.room, wsData.Body.Uname)
+	subtitles, dbGetErr := db.GetAllSubtitles()
+	if dbGetErr != nil {
+		return "", dbGetErr
+	}
 	_data := s2cAddUser{
 		Head: struct {
 			Cmd string "json:\"cmd\""
@@ -51,9 +57,11 @@ func (m *message) handleAddUser() (string, error) {
 			s2cCmdAddUser,
 		},
 		Body: struct {
-			Users []string "json:\"users\""
+			Users     []string         "json:\"users\""
+			Subtitles []model.Subtitle "json:\"subtitles\""
 		}{
-			allRoomUsers[m.room],
+			Users:     allRoomUsers[m.room],
+			Subtitles: subtitles,
 		},
 	}
 	_dataByte, marshalErr := json.Marshal(&_data)

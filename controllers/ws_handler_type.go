@@ -1,4 +1,6 @@
-package controller
+package controllers
+
+import "vvvorld/model"
 
 type roomUsers map[string][]string
 
@@ -12,6 +14,7 @@ const (
 	s2cCmdAddUser string = "sAddUser"
 )
 
+// client会在onopen同时发送addUser cmd
 type c2sAddUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
@@ -39,11 +42,13 @@ type c2sSubtitle struct {
 	} `json:"body"`
 }
 
+// 回应addUser cmd的时候连带subtitles list一起返回(初始化)
 type s2cAddUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Users []string `json:"users"`
+		Users     []string         `json:"users"`
+		Subtitles []model.Subtitle `json:"subtitles"`
 	} `json:"body"`
 }

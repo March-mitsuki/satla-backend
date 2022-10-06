@@ -1,4 +1,4 @@
-package controller
+package controllers
 
 type responseUserInfo struct {
 	Id       int    `json:"id"`

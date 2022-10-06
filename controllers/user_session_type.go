@@ -1,4 +1,4 @@
-package controller
+package controllers
 
 type userLogin struct {
 	Email    string `json:"email"`

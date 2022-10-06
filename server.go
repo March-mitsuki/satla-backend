@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"vvvorld/controller"
+	"vvvorld/controllers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -26,7 +26,7 @@ func directAccess(c *gin.Context) {
 }
 
 func main() {
-	go controller.WsHub.Run()
+	go controllers.WsHub.Run()
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -48,7 +48,7 @@ func main() {
 
 	r.Static("/assets", "./dist/assets")
 	r.GET("/", func(c *gin.Context) {
-		num, err := controller.CheckLogin(c)
+		num, err := controllers.CheckLogin(c)
 		if err != nil {
 			c.Redirect(303, "/login")
 			fmt.Printf("check login rdb err: %v \n", err)
@@ -81,7 +81,7 @@ func main() {
 	})
 	r.GET("/ws/:roomid", func(c *gin.Context) {
 		roomid := c.Param("roomid")
-		// num, err := controller.CheckLogin(c)
+		// num, err := controllers.CheckLogin(c)
 		// if err != nil {
 		// 	fmt.Printf("check login err: %v \n", err)
 		// 	return
@@ -89,12 +89,12 @@ func main() {
 		// if num == 0 {
 		// 	return
 		// }
-		controller.WsController(c, roomid)
+		controllers.WsController(c, roomid)
 		return
 	})
 
 	api := r.Group("/api")
-	api.Use(controller.CheckLOginMidllerware())
+	api.Use(controllers.CheckLOginMidllerware())
 	api.POST("/new_project", func(c *gin.Context) {
 		buffer := make([]byte, 2048)
 		num, _ := c.Request.Body.Read(buffer)
@@ -103,15 +103,15 @@ func main() {
 			"msg": "create new project successfully",
 		})
 	})
-	api.GET("/crrent_userinfo", controller.GetCurrentUserInfo)
+	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 
 	session := r.Group("/seesion")
-	session.POST("/login", controller.LoginUser)
-	session.POST("/signup", controller.SignupUser)
-	session.DELETE("/logout", controller.LogoutUser)
+	session.POST("/login", controllers.LoginUser)
+	session.POST("/signup", controllers.SignupUser)
+	session.DELETE("/logout", controllers.LogoutUser)
 
 	r.NoRoute(func(c *gin.Context) {
-		num, err := controller.CheckLogin(c)
+		num, err := controllers.CheckLogin(c)
 		if err != nil {
 			c.Redirect(303, "/login")
 			fmt.Printf("check login rdb err: %v \n", err)

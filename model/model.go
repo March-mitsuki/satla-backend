@@ -11,16 +11,21 @@ type Subtitle struct {
 	InputTime    string    `gorm:"not null;type:varchar(64)"`
 	SendTime     time.Time // 为null则为未发送
 	ProjectId    int       `gorm:"not null"`
-	ProjectName  string    `gorm:"not null;type:varchar(128)"`
 	TranslatedBy string    `gorm:"not null;type:varchar(128)"`
 	CheckedBy    string    `gorm:"type:varchar(128)"` // 为null则为未校对
 	Subtitle     string    `gorm:"type:text"`         // 翻译
 	Origin       string    `gorm:"type:text"`         // 原文
 }
 
+type SubtitleOrder struct {
+	gorm.Model
+	ProjectId int    `gorm:"not null"`
+	Order     string `gorm:"type:text"`
+}
+
 type Project struct {
 	gorm.Model
-	ProjectName string `gorm:"not null;type:varchar(128)"`
+	ProjectName string `gorm:"not null;type:varchar(128);uniqueIndex"`
 	Description string `gorm:"not null;type:varchar(256)"`
 	Pointman    string `gorm:"not null;type:varchar(64)"`
 	CreatedBy   string `gorm:"not null;type:varchar(128)"`
