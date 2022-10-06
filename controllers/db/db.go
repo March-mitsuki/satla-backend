@@ -20,7 +20,7 @@ func connectionDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.AutoMigrate(&model.Subtitle{}, &model.Project{})
+	db.AutoMigrate(&model.Subtitle{}, &model.Project{}, &model.SubtitleOrder{}, &model.User{})
 	return db, nil
 }
 
@@ -28,6 +28,16 @@ var Mdb, _ = connectionDB()
 var Rdb = redis.NewClient(&redis.Options{
 	Addr: "localhost:6379",
 })
+
+func TestCreate() {
+	subtitle := model.Subtitle{
+		InputTime:    "93:67:88",
+		ProjectId:    1,
+		TranslatedBy: "SanYue",
+		Subtitle:     "test insert!@#$%^&*#@(!)",
+	}
+	Mdb.Create(&subtitle)
+}
 
 func GetAllSubtitles() ([]model.Subtitle, error) {
 	var subtitles []model.Subtitle
