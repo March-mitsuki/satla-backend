@@ -103,9 +103,7 @@ func main() {
 			"msg": "create new project successfully",
 		})
 	})
-	api.GET("/userinfo", func(c *gin.Context) {
-
-	})
+	api.GET("/crrent_userinfo", controller.GetCurrentUserInfo)
 
 	session := r.Group("/seesion")
 	session.POST("/login", controller.LoginUser)

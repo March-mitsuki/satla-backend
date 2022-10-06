@@ -22,10 +22,14 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var allRoomUsers roomUsers = make(roomUsers, 0)
+
 func (s subscription) readPump() {
 	c := s.conn
+	var cUname string
 	defer func() {
 		WsHub.unregister <- s
+		allRoomUsers.delUser(s.room, cUname)
 		c.ws.Close()
 		fmt.Println("ws close by read pump")
 	}()
@@ -38,16 +42,21 @@ func (s subscription) readPump() {
 		m := message{msg, s.room, s.conn}
 		cmd := json.Get(msg, "head", "cmd").ToString()
 		switch cmd {
-		case "addSubtitle":
-			var wsData wsSubtitleData
+		case c2sCmdAddSubtitle:
+			var wsData c2sSubtitle
 			json.Unmarshal(msg, &wsData)
 			fmt.Printf("\n --parse add subtitle-- \n %+v \n", wsData)
 			WsHub.broadcast <- m
-		case "addUser":
-			var wsData wsAddUserData
-			json.Unmarshal(msg, &wsData)
-			fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
-			WsHub.castother <- m
+		case c2sCmdAddUser:
+			_cUname, addUserErr := m.handleAddUser()
+			if addUserErr != nil {
+				fmt.Printf("add user err: %v \n", addUserErr)
+				return
+			}
+			cUname = _cUname
+			WsHub.broadcast <- m
+		default:
+			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}
 	}
 }
@@ -66,7 +75,7 @@ func (s subscription) writePump() {
 	for {
 		msg, ok := <-c.send
 		if !ok {
-			c.write(websocket.CloseMessage, []byte("<-c.send err"))
+			fmt.Println("<-c.send err")
 			return
 		}
 		fmt.Println("send once")

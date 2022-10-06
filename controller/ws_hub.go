@@ -1,6 +1,8 @@
 package controller
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var WsHub = hub{
 	broadcast:  make(chan message),

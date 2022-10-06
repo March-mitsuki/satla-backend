@@ -26,37 +26,3 @@ type hub struct {
 	castother  chan message
 	castself   chan message
 }
-
-type wsCmd string
-
-const (
-	addUserCmd     wsCmd = "addUser"
-	addSubtitleCmd wsCmd = "addSubtitle"
-)
-
-type wsAddUserData struct {
-	Head struct {
-		Cmd wsCmd `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Data string `json:"data"`
-	} `json:"body"`
-}
-
-type wsSubtitleData struct {
-	Head struct {
-		Cmd wsCmd `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Data struct {
-			InputTime    string `json:"input_time"`
-			SendTime     int64  `json:"send_time"`
-			ProjectID    int    `json:"project_id"`
-			ProjectName  string `json:"project_name"`
-			TranslatedBy string `json:"translated_by"`
-			CheckedBy    string `json:"checked_by"`
-			Subtitle     string `json:"subtitle"`
-			Origin       string `json:"origin"`
-		} `json:"data"`
-	} `json:"body"`
-}
