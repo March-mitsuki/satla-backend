@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUserInfo(c *gin.Context) {
+func GetCurrentUserInfo(c *gin.Context) {
 	s := sessions.Default(c)
 	email := s.Get(cookieUserEmail)
 	var user model.User
@@ -20,5 +20,10 @@ func GetUserInfo(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(200, user)
+	res := responseUserInfo{
+		Id:       int(user.ID),
+		UserName: user.UserName,
+		Email:    user.Email,
+	}
+	c.JSON(200, res)
 }
