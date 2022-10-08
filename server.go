@@ -97,6 +97,7 @@ func main() {
 	// api.Use(controllers.CheckLOginMidllerware())
 	api.POST("/new_project", controllers.CreateNewProject)
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
+	api.GET("/all_projects", controllers.GetAllProjects)
 
 	session := r.Group("/seesion")
 	session.POST("/login", controllers.LoginUser)

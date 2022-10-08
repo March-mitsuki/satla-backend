@@ -28,6 +28,7 @@ const (
 	statusGetUserErr           jsonResStatus = 5301
 	statusJsonMarshalErr       jsonResStatus = 5302
 	statusNewProjectErr        jsonResStatus = 5303
+	statusGetProjectsErr       jsonResStatus = 5304
 )
 
 const (

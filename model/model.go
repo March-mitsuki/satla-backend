@@ -8,10 +8,10 @@ import (
 )
 
 type CustomeModel struct {
-	ID        uint `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Subtitle struct {
@@ -33,10 +33,10 @@ type SubtitleOrder struct {
 
 type Project struct {
 	CustomeModel `gorm:"embedded"`
-	ProjectName  string `gorm:"not null;type:varchar(128);uniqueIndex"`
-	Description  string `gorm:"not null;type:varchar(256)"`
-	PointMan     string `gorm:"not null;type:varchar(64)"`
-	CreatedBy    string `gorm:"not null;type:varchar(128)"`
+	ProjectName  string `gorm:"not null;type:varchar(128);uniqueIndex" json:"project_name"`
+	Description  string `gorm:"not null;type:varchar(256)" json:"description"`
+	PointMan     string `gorm:"not null;type:varchar(64)" json:"point_man"`
+	CreatedBy    string `gorm:"not null;type:varchar(128)" json:"created_by"`
 }
 
 type User struct {

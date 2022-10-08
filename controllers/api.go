@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"vvvorld/controllers/db"
 	"vvvorld/model"
 
@@ -35,9 +34,8 @@ func CreateNewProject(c *gin.Context) {
 	buffer := make([]byte, 2048)
 	num, _ := c.Request.Body.Read(buffer)
 	var body createNewProjectBody
-	fmt.Printf("\n create new project buffer: %+v \n", buffer[0:num])
 	json.Unmarshal(buffer[0:num], &body)
-	fmt.Printf("\n unmarshal body: %+v \n", body)
+	// fmt.Printf("\n unmarshal body: %+v \n", body)
 	insertData := model.Project{
 		ProjectName: body.ProjectName,
 		Description: body.Description,
@@ -60,5 +58,21 @@ func CreateNewProject(c *gin.Context) {
 		"create new project successfully",
 	}
 	c.JSON(200, jsonRes)
+	return
+}
+
+func GetAllProjects(c *gin.Context) {
+	var projects []model.Project
+	result := db.Mdb.Find(&projects)
+	if result.Error != nil {
+		jsonRes := jsonResponse{
+			-1,
+			statusGetProjectsErr,
+			"db find err",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	c.JSON(200, projects)
 	return
 }
