@@ -34,20 +34,22 @@ func LoginUser(c *gin.Context) {
 	result := db.Mdb.Where("email = ?", body.Email).First(&search)
 	if result.Error != nil {
 		fmt.Println("不存在该用户或者尚未注册")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusLoginNoUser,
-			"msg":    "no user error",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusLoginNoUser,
+			"no user error",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	if comparePassword(search.PasswordHash, body.Password) != nil {
 		fmt.Println("密码不正确")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusLoginIncorrectPass,
-			"msg":    "incorrect password",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusLoginIncorrectPass,
+			"incorrect password",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	_uuid, _ := uuid.NewRandom()
@@ -58,11 +60,12 @@ func LoginUser(c *gin.Context) {
 	sessionSaveErr := s.Save()
 	if sessionSaveErr != nil {
 		fmt.Println("session save error")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusLoginSessionSaveErr,
-			"msg":    "save session error",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusLoginSessionSaveErr,
+			"save session error",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	// 测试用设置过期时间为1分钟
@@ -70,11 +73,12 @@ func LoginUser(c *gin.Context) {
 	rdbSetErr := db.Rdb.Set(c, uuid, "ok", 12*time.Hour).Err()
 	if rdbSetErr != nil {
 		fmt.Println("redis set session error")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusLoginRdbSetErr,
-			"msg":    "redis set error",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusLoginRdbSetErr,
+			"redis set error",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	c.Redirect(303, "/")
@@ -93,11 +97,12 @@ func SignupUser(c *gin.Context) {
 	searchResult := db.Mdb.Where("email = ?", body.Email).First(&search)
 	if searchResult.Error == nil && search.Email == body.Email {
 		fmt.Println("已存在该用户,请直接登录")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusSignupExistingUser,
-			"msg":    "existing user, please login",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusSignupExistingUser,
+			"existing user, please login",
+		}
+		c.JSON(200, jsonRes)
 		return
 	} else if searchResult.Error != nil {
 		fmt.Println("未存在该用户,继续执行操作")
@@ -105,11 +110,12 @@ func SignupUser(c *gin.Context) {
 	newPassHash, encryptErr := encryptPassword(body.Password)
 	if encryptErr != nil {
 		fmt.Println("hash化密码失败")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusSignupEncryptPassErr,
-			"msg":    "encrypt password failed, please retry",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusSignupEncryptPassErr,
+			"encrypt password failed, please retry",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	var newUser model.User
@@ -119,11 +125,12 @@ func SignupUser(c *gin.Context) {
 	createResult := db.Mdb.Create(&newUser)
 	if createResult.Error != nil {
 		fmt.Println("创建用户失败")
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusSignupDbCreateErr,
-			"msg":    "create new user failed, please retry",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusSignupDbCreateErr,
+			"create new user failed, please retry",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	c.Redirect(303, "/login")

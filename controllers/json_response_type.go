@@ -1,12 +1,10 @@
 package controllers
 
 type jsonResponse struct {
-	Code   uint // 0 -> 成功, -1 -> 失败
-	Status jsonResStatus
-	Msg    string
+	Code   int           `json:"code"` // 0 -> 成功, -1 -> 失败
+	Status jsonResStatus `json:"status"`
+	Msg    string        `json:"msg"`
 }
-
-type jsonResCode uint
 
 // 2000番 -> 成功
 //
