@@ -35,7 +35,7 @@ type Project struct {
 	CustomeModel `gorm:"embedded"`
 	ProjectName  string `gorm:"not null;type:varchar(128);uniqueIndex"`
 	Description  string `gorm:"not null;type:varchar(256)"`
-	Pointman     string `gorm:"not null;type:varchar(64)"`
+	PointMan     string `gorm:"not null;type:varchar(64)"`
 	CreatedBy    string `gorm:"not null;type:varchar(128)"`
 }
 
