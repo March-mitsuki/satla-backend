@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"vvvorld/controllers/db"
 	"vvvorld/model"
 
@@ -14,11 +15,12 @@ func GetCurrentUserInfo(c *gin.Context) {
 	var user model.User
 	result := db.Mdb.Where("email = ?", email).First(&user)
 	if result.Error != nil {
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusGetUserErr,
-			"msg":    "db get error",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusGetUserErr,
+			"db get error",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
 	res := responseUserInfo{
@@ -30,10 +32,12 @@ func GetCurrentUserInfo(c *gin.Context) {
 }
 
 func CreateNewProject(c *gin.Context) {
-	buffer := make([]byte, 0)
+	buffer := make([]byte, 2048)
 	num, _ := c.Request.Body.Read(buffer)
 	var body createNewProjectBody
+	fmt.Printf("\n create new project buffer: %+v \n", buffer[0:num])
 	json.Unmarshal(buffer[0:num], &body)
+	fmt.Printf("\n unmarshal body: %+v \n", body)
 	insertData := model.Project{
 		ProjectName: body.ProjectName,
 		Description: body.Description,
@@ -42,16 +46,19 @@ func CreateNewProject(c *gin.Context) {
 	}
 	result := db.Mdb.Create(&insertData)
 	if result.Error != nil {
-		c.JSON(200, gin.H{
-			"code":   -1,
-			"status": statusNewProjectErr,
-			"msg":    "db create err",
-		})
+		jsonRes := jsonResponse{
+			-1,
+			statusNewProjectErr,
+			"db create err",
+		}
+		c.JSON(200, jsonRes)
 		return
 	}
-	c.JSON(200, gin.H{
-		"code":   0,
-		"status": 2000,
-		"msg":    "create new project successfully",
-	})
+	jsonRes := jsonResponse{
+		0,
+		2000,
+		"create new project successfully",
+	}
+	c.JSON(200, jsonRes)
+	return
 }
