@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
@@ -39,12 +38,16 @@ func TestCreate() {
 	Mdb.Create(&subtitle)
 }
 
-func GetAllSubtitles() ([]model.Subtitle, error) {
+func GetRoomSubtitles(roomid string) ([]model.Subtitle, error) {
+	var project model.Project
+	pidResult := Mdb.Where("project_name = ?", roomid).First(&project)
+	if pidResult.Error != nil {
+		return nil, pidResult.Error
+	}
 	var subtitles []model.Subtitle
-	result := Mdb.Find(&subtitles)
-	if result.Error != nil {
-		fmt.Printf("get all subtitles err: %v \n", result.Error)
-		return nil, result.Error
+	subResult := Mdb.Where("project_id = ?", project.ID).Find(&subtitles)
+	if subResult.Error != nil {
+		return nil, subResult.Error
 	}
 	return subtitles, nil
 }

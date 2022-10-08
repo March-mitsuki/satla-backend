@@ -55,6 +55,13 @@ func (s subscription) readPump() {
 			}
 			cUname = _cUname
 			WsHub.broadcast <- m
+		case c2sCmdGetRoomSubtitles:
+			err := m.handleGetRoomSubtitles()
+			if err != nil {
+				fmt.Printf("get all subtitles err %v \n", err)
+				return
+			}
+			WsHub.castself <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}

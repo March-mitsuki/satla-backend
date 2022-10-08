@@ -7,20 +7,31 @@ type roomUsers map[string][]string
 // c2s -> client to server
 // s2c -> server to client
 const (
-	c2sCmdAddUser     string = "addUser"
-	c2sCmdAddSubtitle string = "addSubtitle"
+	c2sCmdAddUser          string = "addUser"
+	c2sCmdGetRoomSubtitles string = "getRoomSubtitles"
+	c2sCmdAddSubtitle      string = "addSubtitle"
 )
 const (
-	s2cCmdAddUser string = "sAddUser"
+	s2cCmdAddUser          string = "sAddUser"
+	s2cCmdGetRoomSubtitles string = "sGetRoomSubtitles"
 )
 
-// client会在onopen同时发送addUser cmd
+// client会在onopen时发送addUser和getAllSubtitle
 type c2sAddUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
 	} `json:"head"`
 	Body struct {
 		Uname string `json:"uname"`
+	} `json:"body"`
+}
+
+type c2sGetRoomSubtitles struct {
+	Head struct {
+		Cmd string `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Roomid string `json:"roomid"`
 	} `json:"body"`
 }
 
@@ -42,13 +53,20 @@ type c2sSubtitle struct {
 	} `json:"body"`
 }
 
-// 回应addUser cmd的时候连带subtitles list一起返回(初始化)
 type s2cAddUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Users     []string         `json:"users"`
+		Users []string `json:"users"`
+	} `json:"body"`
+}
+
+type s2cGetRoomSubtitles struct {
+	Head struct {
+		Cmd string `json:"cmd"`
+	} `json:"head"`
+	Body struct {
 		Subtitles []model.Subtitle `json:"subtitles"`
 	} `json:"body"`
 }

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"vvvorld/controllers/db"
 	"vvvorld/model"
 )
@@ -39,35 +38,61 @@ func (rUser *roomUsers) delUser(roomid, uname string) error {
 }
 
 func (m *message) handleAddUser() (string, error) {
+	// 除了更改m中data的内容,并返回error之外
+	// 还会额外返回一个供删除时使用的username(string)
 	var wsData c2sAddUser
 	unmarshalErr := json.Unmarshal(m.data, &wsData)
 	if unmarshalErr != nil {
 		return "", unmarshalErr
 	}
-	fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
+	// fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
 	allRoomUsers.addUser(m.room, wsData.Body.Uname)
-	subtitles, dbGetErr := db.GetAllSubtitles()
-	if dbGetErr != nil {
-		return "", dbGetErr
-	}
 	_data := s2cAddUser{
 		Head: struct {
 			Cmd string "json:\"cmd\""
 		}{
-			s2cCmdAddUser,
+			Cmd: s2cCmdAddUser,
 		},
 		Body: struct {
-			Users     []string         "json:\"users\""
-			Subtitles []model.Subtitle "json:\"subtitles\""
+			Users []string "json:\"users\""
 		}{
-			Users:     allRoomUsers[m.room],
-			Subtitles: subtitles,
+			Users: allRoomUsers[m.room],
 		},
 	}
-	_dataByte, marshalErr := json.Marshal(&_data)
+	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		return "", marshalErr
 	}
-	m.data = _dataByte
+	m.data = data
 	return wsData.Body.Uname, nil
+}
+
+func (m *message) handleGetRoomSubtitles() error {
+	var wsData c2sGetRoomSubtitles
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	subtitles, dbGetErr := db.GetRoomSubtitles(wsData.Body.Roomid)
+	if dbGetErr != nil {
+		return dbGetErr
+	}
+	_data := s2cGetRoomSubtitles{
+		Head: struct {
+			Cmd string "json:\"cmd\""
+		}{
+			Cmd: s2cCmdGetRoomSubtitles,
+		},
+		Body: struct {
+			Subtitles []model.Subtitle "json:\"subtitles\""
+		}{
+			Subtitles: subtitles,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
 }
