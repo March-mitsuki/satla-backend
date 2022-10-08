@@ -7,17 +7,17 @@ type roomUsers map[string][]string
 // c2s -> client to server
 // s2c -> server to client
 const (
-	c2sCmdAddUser          string = "addUser"
+	c2sCmdChangeUser       string = "changeUser"
 	c2sCmdGetRoomSubtitles string = "getRoomSubtitles"
 	c2sCmdAddSubtitle      string = "addSubtitle"
 )
 const (
-	s2cCmdAddUser          string = "sAddUser"
+	s2cCmdChangeUser       string = "sChangeUser"
 	s2cCmdGetRoomSubtitles string = "sGetRoomSubtitles"
 )
 
-// client会在onopen时发送addUser和getAllSubtitle
-type c2sAddUser struct {
+// client会在onopen时发送ChangeUser和getAllSubtitle
+type c2sChangeUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
 	} `json:"head"`
@@ -53,7 +53,7 @@ type c2sSubtitle struct {
 	} `json:"body"`
 }
 
-type s2cAddUser struct {
+type s2cChangeUser struct {
 	Head struct {
 		Cmd string `json:"cmd"`
 	} `json:"head"`

@@ -28,8 +28,28 @@ func (s subscription) readPump() {
 	c := s.conn
 	var cUname string
 	defer func() {
-		WsHub.unregister <- s
 		allRoomUsers.delUser(s.room, cUname)
+		_closeMsgData := s2cChangeUser{
+			Head: struct {
+				Cmd string "json:\"cmd\""
+			}{
+				Cmd: s2cCmdChangeUser,
+			},
+			Body: struct {
+				Users []string "json:\"users\""
+			}{
+				Users: allRoomUsers[s.room],
+			},
+		}
+		closeMsgData, marshalErr := json.Marshal(&_closeMsgData)
+		if marshalErr != nil {
+			fmt.Println("unregister change user err")
+			WsHub.unregister <- s
+			c.ws.Close()
+		}
+		closeMsg := message{closeMsgData, s.room, s.conn}
+		WsHub.broadcast <- closeMsg
+		WsHub.unregister <- s
 		c.ws.Close()
 		fmt.Println("ws close by read pump")
 	}()
@@ -47,7 +67,7 @@ func (s subscription) readPump() {
 			json.Unmarshal(msg, &wsData)
 			fmt.Printf("\n --parse add subtitle-- \n %+v \n", wsData)
 			WsHub.broadcast <- m
-		case c2sCmdAddUser:
+		case c2sCmdChangeUser:
 			_cUname, addUserErr := m.handleAddUser()
 			if addUserErr != nil {
 				fmt.Printf("add user err: %v \n", addUserErr)

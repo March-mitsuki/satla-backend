@@ -40,18 +40,18 @@ func (rUser *roomUsers) delUser(roomid, uname string) error {
 func (m *message) handleAddUser() (string, error) {
 	// 除了更改m中data的内容,并返回error之外
 	// 还会额外返回一个供删除时使用的username(string)
-	var wsData c2sAddUser
+	var wsData c2sChangeUser
 	unmarshalErr := json.Unmarshal(m.data, &wsData)
 	if unmarshalErr != nil {
 		return "", unmarshalErr
 	}
 	// fmt.Printf("\n --parse add user-- \n %+v \n", wsData)
 	allRoomUsers.addUser(m.room, wsData.Body.Uname)
-	_data := s2cAddUser{
+	_data := s2cChangeUser{
 		Head: struct {
 			Cmd string "json:\"cmd\""
 		}{
-			Cmd: s2cCmdAddUser,
+			Cmd: s2cCmdChangeUser,
 		},
 		Body: struct {
 			Users []string "json:\"users\""
