@@ -31,7 +31,7 @@ func (s subscription) readPump() {
 		allRoomUsers.delUser(s.room, cUname)
 		_closeMsgData := s2cChangeUser{
 			Head: struct {
-				Cmd string "json:\"cmd\""
+				Cmd s2cCmds "json:\"cmd\""
 			}{
 				Cmd: s2cCmdChangeUser,
 			},
@@ -61,11 +61,21 @@ func (s subscription) readPump() {
 		}
 		m := message{msg, s.room, s.conn}
 		cmd := json.Get(msg, "head", "cmd").ToString()
+		// switch根据发过来的cmd不同进行不同的处理
 		switch cmd {
-		case c2sCmdAddSubtitle:
-			var wsData c2sSubtitle
-			json.Unmarshal(msg, &wsData)
-			fmt.Printf("\n --parse add subtitle-- \n %+v \n", wsData)
+		case c2sCmdAddSubtitleUp:
+			err := m.handleAddSubtitleUp()
+			if err != nil {
+				fmt.Printf("add subtitle up err: %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdAddSubtitleDown:
+			err := m.handleAddSubtitleDown()
+			if err != nil {
+				fmt.Printf("add subtitle down err: %v \n", err)
+				return
+			}
 			WsHub.broadcast <- m
 		case c2sCmdChangeUser:
 			_cUname, addUserErr := m.handleAddUser()
@@ -100,6 +110,7 @@ func (s subscription) writePump() {
 	}()
 
 	for {
+		// writePump将readPump传过来的message原封不动写给client
 		msg, ok := <-c.send
 		if !ok {
 			fmt.Println("<-c.send err")

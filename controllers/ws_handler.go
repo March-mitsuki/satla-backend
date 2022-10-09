@@ -49,7 +49,7 @@ func (m *message) handleAddUser() (string, error) {
 	allRoomUsers.addUser(m.room, wsData.Body.Uname)
 	_data := s2cChangeUser{
 		Head: struct {
-			Cmd string "json:\"cmd\""
+			Cmd s2cCmds "json:\"cmd\""
 		}{
 			Cmd: s2cCmdChangeUser,
 		},
@@ -73,25 +73,109 @@ func (m *message) handleGetRoomSubtitles() error {
 	if unmarshalErr != nil {
 		return unmarshalErr
 	}
-	subtitles, dbGetErr := db.GetRoomSubtitles(wsData.Body.Roomid)
+	subtitles, order, dbGetErr := db.GetRoomSubtitles(wsData.Body.Roomid)
 	if dbGetErr != nil {
 		return dbGetErr
 	}
 	_data := s2cGetRoomSubtitles{
 		Head: struct {
-			Cmd string "json:\"cmd\""
+			Cmd s2cCmds "json:\"cmd\""
 		}{
 			Cmd: s2cCmdGetRoomSubtitles,
 		},
 		Body: struct {
 			Subtitles []model.Subtitle "json:\"subtitles\""
+			Order     string           "json:\"order\""
 		}{
 			Subtitles: subtitles,
+			Order:     order,
 		},
 	}
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleAddSubtitleUp() error {
+	var wsData c2sAddSubtitle
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	arg := db.ArgAddSubtitle{
+		PreSubtitleId: wsData.Body.PreSubtitleId,
+		ProjectId:     wsData.Body.ProjectId,
+		CheckedBy:     wsData.Body.CheckedBy,
+	}
+	newSubId, err := db.CreateSubtitleUp(arg)
+	if err != nil {
+		return err
+	}
+	_data := s2cAddSubtitle{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAddSubtitleUp,
+		},
+		Body: struct {
+			ProjectId      uint   "json:\"project_id\""
+			NewSubtitleId  uint   "json:\"new_subtitle_id\""
+			PreSubtitleIdx uint   "json:\"pre_subtitle_idx\""
+			CheckedBy      string "json:\"checked_by\""
+		}{
+			ProjectId:      wsData.Body.PreSubtitleId,
+			PreSubtitleIdx: wsData.Body.PreSubtitleIdx,
+			NewSubtitleId:  newSubId,
+			CheckedBy:      wsData.Body.CheckedBy,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return nil
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleAddSubtitleDown() error {
+	var wsData c2sAddSubtitle
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	arg := db.ArgAddSubtitle{
+		PreSubtitleId: wsData.Body.PreSubtitleId,
+		ProjectId:     wsData.Body.ProjectId,
+		CheckedBy:     wsData.Body.CheckedBy,
+	}
+	newSubId, err := db.CreateSubtitleDown(arg)
+	if err != nil {
+		return err
+	}
+	_data := s2cAddSubtitle{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAddSubtitleDown,
+		},
+		Body: struct {
+			ProjectId      uint   "json:\"project_id\""
+			NewSubtitleId  uint   "json:\"new_subtitle_id\""
+			PreSubtitleIdx uint   "json:\"pre_subtitle_idx\""
+			CheckedBy      string "json:\"checked_by\""
+		}{
+			ProjectId:      wsData.Body.PreSubtitleId,
+			PreSubtitleIdx: wsData.Body.PreSubtitleIdx,
+			NewSubtitleId:  newSubId,
+			CheckedBy:      wsData.Body.CheckedBy,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return nil
 	}
 	m.data = data
 	return nil
