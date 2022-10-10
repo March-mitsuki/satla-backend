@@ -188,11 +188,10 @@ func (m *message) handleChangeSubtitle() error {
 		return unmarshalErr
 	}
 	arg := db.ArgChangeSubtitle{
-		ID:           wsData.Body.ID,
-		TranslatedBy: wsData.Body.TranslatedBy,
-		CheckedBy:    wsData.Body.CheckedBy,
-		Subtitle:     wsData.Body.Subtitle,
-		Origin:       wsData.Body.Origin,
+		ID:        wsData.Body.ID,
+		CheckedBy: wsData.Body.CheckedBy,
+		Subtitle:  wsData.Body.Subtitle.Subtitle,
+		Origin:    wsData.Body.Origin,
 	}
 	var _data s2cChangeSubtitle
 	err := db.ChangeSubtitle(arg)
@@ -205,11 +204,11 @@ func (m *message) handleChangeSubtitle() error {
 				Cmd: s2cCmdChangeSubtitle,
 			},
 			Body: struct {
-				Status     bool "json:\"status\""
-				SubtitleId uint "json:\"subtitle_id\""
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
 			}{
-				Status:     false,
-				SubtitleId: wsData.Body.ID,
+				Status:   false,
+				Subtitle: wsData.Body.Subtitle,
 			},
 		}
 	} else {
@@ -220,11 +219,11 @@ func (m *message) handleChangeSubtitle() error {
 				Cmd: s2cCmdChangeSubtitle,
 			},
 			Body: struct {
-				Status     bool "json:\"status\""
-				SubtitleId uint "json:\"subtitle_id\""
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
 			}{
-				Status:     true,
-				SubtitleId: wsData.Body.ID,
+				Status:   true,
+				Subtitle: wsData.Body.Subtitle,
 			},
 		}
 	}

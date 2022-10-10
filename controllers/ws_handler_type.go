@@ -82,7 +82,7 @@ type c2sAddSubtitle struct {
 type c2sChangeSubtitle struct {
 	c2sHead
 	Body struct {
-		SubtitleFromClient `json:"subtitle"`
+		model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
 
@@ -134,8 +134,8 @@ type s2cChangeSubtitle struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Status     bool `json:"status"`
-		SubtitleId uint `json:"subtitle_id"`
+		Status   bool           `json:"status"`
+		Subtitle model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
 

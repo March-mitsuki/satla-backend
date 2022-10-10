@@ -64,6 +64,8 @@ func (s subscription) readPump() {
 		// switch根据发过来的cmd不同进行不同的处理
 		switch cmd {
 		case c2sCmdAddSubtitleUp:
+			fmt.Println("--- c2s: Cmd Add Subtitle Up ---")
+
 			err := m.handleAddSubtitleUp()
 			if err != nil {
 				fmt.Printf("add subtitle up err: %v \n", err)
@@ -71,6 +73,8 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 		case c2sCmdAddSubtitleDown:
+			fmt.Println("--- c2s: Cmd Add Subtitle Down ---")
+
 			err := m.handleAddSubtitleDown()
 			if err != nil {
 				fmt.Printf("add subtitle down err: %v \n", err)
@@ -78,6 +82,8 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 		case c2sCmdChangeUser:
+			fmt.Println("--- c2s: Cmd Change User ---")
+
 			_cUname, addUserErr := m.handleAddUser()
 			if addUserErr != nil {
 				fmt.Printf("add user err: %v \n", addUserErr)
@@ -86,6 +92,8 @@ func (s subscription) readPump() {
 			cUname = _cUname
 			WsHub.broadcast <- m
 		case c2sCmdGetRoomSubtitles:
+			fmt.Println("--- c2s: Cmd Get Room Subtitles ---")
+
 			err := m.handleGetRoomSubtitles()
 			if err != nil {
 				fmt.Printf("get all subtitles err %v \n", err)
@@ -93,6 +101,8 @@ func (s subscription) readPump() {
 			}
 			WsHub.castself <- m
 		case c2sCmdChangeSubtitle:
+			fmt.Println("--- c2s: Cmd Change Subtitle ---")
+
 			err := m.handleChangeSubtitle()
 			if err != nil {
 				fmt.Printf("change subtitles err %v \n", err)
@@ -100,6 +110,8 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 		case c2sCmdEditStart:
+			fmt.Println("--- c2s: Cmd Edit Start ---")
+
 			err := m.handleEditStart()
 			if err != nil {
 				fmt.Printf("edit start err %v \n", err)
@@ -107,6 +119,8 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 		case c2sCmdEditEnd:
+			fmt.Println("--- c2s: Cmd Edit End ---")
+
 			err := m.handleEditEnd()
 			if err != nil {
 				fmt.Printf("edit end err %v \n", err)
@@ -137,7 +151,6 @@ func (s subscription) writePump() {
 			fmt.Println("<-c.send err")
 			return
 		}
-		fmt.Println("send once")
 		if err := c.write(websocket.TextMessage, msg); err != nil {
 			return
 		}

@@ -155,10 +155,9 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 
 func ChangeSubtitle(arg ArgChangeSubtitle) error {
 	updateMap := map[string]interface{}{
-		"translated_by": arg.TranslatedBy,
-		"checked_by":    arg.CheckedBy,
-		"subtitle":      arg.Subtitle,
-		"origin":        arg.Origin,
+		"checked_by": arg.CheckedBy,
+		"subtitle":   arg.Subtitle,
+		"origin":     arg.Origin,
 	}
 	result := Mdb.Model(&model.Subtitle{}).Where(
 		"id = ?",

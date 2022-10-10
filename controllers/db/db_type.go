@@ -7,9 +7,8 @@ type ArgAddSubtitle struct {
 }
 
 type ArgChangeSubtitle struct {
-	ID           uint
-	TranslatedBy string
-	CheckedBy    string
-	Subtitle     string
-	Origin       string
+	ID        uint
+	CheckedBy string
+	Subtitle  string
+	Origin    string
 }
