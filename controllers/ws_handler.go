@@ -134,7 +134,7 @@ func (m *message) handleAddSubtitleUp() error {
 	}
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
-		return nil
+		return marshalErr
 	}
 	m.data = data
 	return nil
@@ -175,7 +175,62 @@ func (m *message) handleAddSubtitleDown() error {
 	}
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
-		return nil
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleChangeSubtitle() error {
+	var wsData c2sChangeSubtitle
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	arg := db.ArgChangeSubtitle{
+		ID:           wsData.Body.ID,
+		TranslatedBy: wsData.Body.TranslatedBy,
+		CheckedBy:    wsData.Body.CheckedBy,
+		Subtitle:     wsData.Body.Subtitle,
+		Origin:       wsData.Body.Origin,
+	}
+	var _data s2cChangeSubtitle
+	err := db.ChangeSubtitle(arg)
+	if err != nil {
+		// 若未能正确修改字幕则回复一个消息告知未能修改
+		_data = s2cChangeSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdChangeSubtitle,
+			},
+			Body: struct {
+				Status     bool "json:\"status\""
+				SubtitleId uint "json:\"subtitle_id\""
+			}{
+				Status:     false,
+				SubtitleId: wsData.Body.ID,
+			},
+		}
+	} else {
+		_data = s2cChangeSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdChangeSubtitle,
+			},
+			Body: struct {
+				Status     bool "json:\"status\""
+				SubtitleId uint "json:\"subtitle_id\""
+			}{
+				Status:     true,
+				SubtitleId: wsData.Body.ID,
+			},
+		}
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
 	}
 	m.data = data
 	return nil

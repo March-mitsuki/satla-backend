@@ -1,8 +1,24 @@
 package controllers
 
-import "vvvorld/model"
+import (
+	"vvvorld/model"
+)
 
 type roomUsers map[string][]string
+
+type SubtitleFromClient struct {
+	ID           uint        `json:"id"`
+	CreatedAt    interface{} `json:"-"`
+	UpdatedAt    interface{} `json:"-"`
+	DeletedAt    interface{} `json:"-"`
+	InputTime    string      `json:"input_time"`
+	SendTime     interface{} `json:"send_time"`
+	ProjectID    uint        `json:"project_id"`
+	TranslatedBy string      `json:"translated_by"`
+	CheckedBy    string      `json:"checked_by"`
+	Subtitle     string      `json:"subtitle"`
+	Origin       string      `json:"origin"`
+}
 
 // c2s -> client to server
 // s2c -> server to client
@@ -12,6 +28,7 @@ const (
 	c2sCmdGetRoomSubtitles string = "getRoomSubtitles"
 	c2sCmdAddSubtitleUp    string = "addSubtitleUp"
 	c2sCmdAddSubtitleDown  string = "addSubtitleDown"
+	c2sCmdChangeSubtitle   string = "changeSubtitle"
 )
 
 type s2cCmds string
@@ -21,6 +38,7 @@ const (
 	s2cCmdGetRoomSubtitles s2cCmds = "sGetRoomSubtitles"
 	s2cCmdAddSubtitleUp    s2cCmds = "sAddSubtitleUp"
 	s2cCmdAddSubtitleDown  s2cCmds = "sAddSubtitleDown"
+	s2cCmdChangeSubtitle   s2cCmds = "sChangeSubtitle"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -54,7 +72,16 @@ type c2sAddSubtitle struct {
 		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
 		ProjectId      uint   `json:"project_id"`
 		CheckedBy      string `json:"checked_by"`
-	}
+	} `json:"body"`
+}
+
+type c2sChangeSubtitle struct {
+	Head struct {
+		Cmd string `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		SubtitleFromClient `json:"subtitle"`
+	} `json:"body"`
 }
 
 // ------ 以下 s2c ------
@@ -88,5 +115,15 @@ type s2cAddSubtitle struct {
 		NewSubtitleId  uint   `json:"new_subtitle_id"`
 		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
 		CheckedBy      string `json:"checked_by"`
+	} `json:"body"`
+}
+
+type s2cChangeSubtitle struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status     bool `json:"status"`
+		SubtitleId uint `json:"subtitle_id"`
 	} `json:"body"`
 }
