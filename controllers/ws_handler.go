@@ -235,3 +235,59 @@ func (m *message) handleChangeSubtitle() error {
 	m.data = data
 	return nil
 }
+
+func (m *message) handleEditStart() error {
+	var wsData c2sEditChange
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	_data := s2cEditChange{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdEditStart,
+		},
+		Body: struct {
+			Uname      string "json:\"uname\""
+			SubtitleId uint   "json:\"subtitle_id\""
+		}{
+			Uname:      wsData.Body.Uname,
+			SubtitleId: wsData.Body.SubtitleId,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleEditEnd() error {
+	var wsData c2sEditChange
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	_data := s2cEditChange{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdEditEnd,
+		},
+		Body: struct {
+			Uname      string "json:\"uname\""
+			SubtitleId uint   "json:\"subtitle_id\""
+		}{
+			Uname:      wsData.Body.Uname,
+			SubtitleId: wsData.Body.SubtitleId,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

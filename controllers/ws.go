@@ -99,6 +99,20 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdEditStart:
+			err := m.handleEditStart()
+			if err != nil {
+				fmt.Printf("edit start err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdEditEnd:
+			err := m.handleEditEnd()
+			if err != nil {
+				fmt.Printf("edit end err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}
