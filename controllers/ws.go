@@ -127,6 +127,15 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdAddTranslatedSub:
+			fmt.Println("--- c2s: Cmd Add Translated Sub ---")
+
+			err := m.handleAddTranslatedSub()
+			if err != nil {
+				fmt.Printf("add translated sub err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}

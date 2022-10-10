@@ -31,6 +31,7 @@ const (
 	c2sCmdChangeSubtitle   string = "changeSubtitle"
 	c2sCmdEditStart        string = "editStart"
 	c2sCmdEditEnd          string = "editEnd"
+	c2sCmdAddTranslatedSub string = "addTransSub"
 )
 
 type s2cCmds string
@@ -43,6 +44,7 @@ const (
 	s2cCmdChangeSubtitle   s2cCmds = "sChangeSubtitle"
 	s2cCmdEditStart        s2cCmds = "sEditStart"
 	s2cCmdEditEnd          s2cCmds = "sEditEnd"
+	s2cCmdAddTranslatedSub s2cCmds = "sAddTransSub"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -92,6 +94,14 @@ type c2sEditChange struct {
 	Body struct {
 		Uname      string `json:"uname"`
 		SubtitleId uint   `json:"subtitle_id"`
+	} `json:"body"`
+}
+
+type c2sAddTranslatedSub struct {
+	c2sHead
+	Body struct {
+		ProjectName string         `json:"project_name"`
+		NewSubtitle model.Subtitle `json:"new_subtitle"`
 	} `json:"body"`
 }
 
@@ -147,5 +157,14 @@ type s2cEditChange struct {
 	Body struct {
 		Uname      string `json:"uname"`
 		SubtitleId uint   `json:"subtitle_id"`
+	} `json:"body"`
+}
+
+type s2cAddTranslatedSub struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		NewSubtitle model.Subtitle `json:"new_subtitle"`
 	} `json:"body"`
 }

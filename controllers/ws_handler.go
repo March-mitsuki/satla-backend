@@ -290,3 +290,37 @@ func (m *message) handleEditEnd() error {
 	m.data = data
 	return nil
 }
+
+func (m *message) handleAddTranslatedSub() error {
+	var wsData c2sAddTranslatedSub
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	// 这里收到的subtitle的id和project_id为0, 需要额外操作
+	newSub, dbErr := db.CreateTranslatedSub(
+		wsData.Body.NewSubtitle,
+		wsData.Body.ProjectName,
+	)
+	if dbErr != nil {
+		return dbErr
+	}
+	_data := s2cAddTranslatedSub{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAddTranslatedSub,
+		},
+		Body: struct {
+			NewSubtitle model.Subtitle "json:\"new_subtitle\""
+		}{
+			NewSubtitle: newSub,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

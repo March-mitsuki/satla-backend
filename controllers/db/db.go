@@ -168,3 +168,45 @@ func ChangeSubtitle(arg ArgChangeSubtitle) error {
 	}
 	return nil
 }
+
+func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, error) {
+	var project model.Project
+	searchResult := Mdb.Where("project_name = ?", pname).First(&project)
+	if searchResult.Error != nil {
+		return model.Subtitle{}, searchResult.Error
+	}
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		(&sub).ProjectId = project.ID
+		createResult := Mdb.Create(&sub)
+		if createResult.Error != nil {
+			return createResult.Error
+		}
+		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			orderResults := tx.Model(
+				&model.SubtitleOrder{},
+			).Where(
+				"project_id = ?",
+				sub.ProjectId,
+			).Update(
+				"order",
+				gorm.Expr(
+					"CONCAT(`order`, '?,')",
+					sub.ID,
+				),
+			)
+			if orderResults.Error != nil {
+				panic(orderResults.Error)
+			}
+			return orderResults
+		})
+		sqlResult := Mdb.Exec(sql)
+		if sqlResult.Error != nil {
+			return sqlResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return model.Subtitle{}, err
+	}
+	return sub, nil
+}
