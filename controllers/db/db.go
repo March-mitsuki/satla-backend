@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
@@ -94,8 +93,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 				),
 			)
 			if orderResults.Error != nil {
-				fmt.Printf("\n ---err here: \n %v -----\n", orderResults.Error)
-				return orderResults
+				panic(orderResults.Error)
 			}
 			return orderResults
 		})
@@ -139,8 +137,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 				),
 			)
 			if orderResults.Error != nil {
-				fmt.Printf("\n ---err here: \n %v -----\n", orderResults.Error)
-				return orderResults
+				panic(orderResults.Error)
 			}
 			return orderResults
 		})
