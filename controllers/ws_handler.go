@@ -324,3 +324,50 @@ func (m *message) handleAddTranslatedSub() error {
 	m.data = data
 	return nil
 }
+
+func (m *message) handleDeleteSubtitle() error {
+	var wsData c2sDeleteSubtitle
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	var _data s2cDeleteSubtitle
+	err := db.DeleteSubtitle(wsData.Body.Subtitle)
+	if err != nil {
+		_data = s2cDeleteSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdDeleteSubtitle,
+			},
+			Body: struct {
+				Status     bool "json:\"status\""
+				SubtitleId uint "json:\"subtitle_id\""
+			}{
+				Status:     true,
+				SubtitleId: wsData.Body.Subtitle.ID,
+			},
+		}
+	} else {
+		_data = s2cDeleteSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdDeleteSubtitle,
+			},
+			Body: struct {
+				Status     bool "json:\"status\""
+				SubtitleId uint "json:\"subtitle_id\""
+			}{
+				Status:     true,
+				SubtitleId: wsData.Body.Subtitle.ID,
+			},
+		}
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

@@ -32,6 +32,7 @@ const (
 	c2sCmdEditStart        string = "editStart"
 	c2sCmdEditEnd          string = "editEnd"
 	c2sCmdAddTranslatedSub string = "addTransSub"
+	c2sCmdDeleteSubtitle   string = "deleteSubtitle"
 )
 
 type s2cCmds string
@@ -45,6 +46,7 @@ const (
 	s2cCmdEditStart        s2cCmds = "sEditStart"
 	s2cCmdEditEnd          s2cCmds = "sEditEnd"
 	s2cCmdAddTranslatedSub s2cCmds = "sAddTransSub"
+	s2cCmdDeleteSubtitle   s2cCmds = "sDeleteSubtitle"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -102,6 +104,13 @@ type c2sAddTranslatedSub struct {
 	Body struct {
 		ProjectName string         `json:"project_name"`
 		NewSubtitle model.Subtitle `json:"new_subtitle"`
+	} `json:"body"`
+}
+
+type c2sDeleteSubtitle struct {
+	c2sHead
+	Body struct {
+		Subtitle model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
 
@@ -166,5 +175,15 @@ type s2cAddTranslatedSub struct {
 	} `json:"head"`
 	Body struct {
 		NewSubtitle model.Subtitle `json:"new_subtitle"`
+	} `json:"body"`
+}
+
+type s2cDeleteSubtitle struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status     bool `json:"status"`
+		SubtitleId uint `json:"subtitle_id"`
 	} `json:"body"`
 }

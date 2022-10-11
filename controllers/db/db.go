@@ -42,7 +42,14 @@ func GetRoomSubtitles(roomid string) ([]model.Subtitle, string, error) {
 	var order model.SubtitleOrder
 	orderResult := Mdb.Where("project_id = ?", project.ID).First(&order)
 	if orderResult.Error != nil {
-		return nil, "", orderResult.Error
+		newOrder := model.SubtitleOrder{
+			ProjectId: project.ID,
+			Order:     ",",
+		}
+		newOrderResult := Mdb.Create(&newOrder)
+		if newOrderResult.Error != nil {
+			return nil, "", newOrderResult.Error
+		}
 	}
 	return subtitles, order.Order, nil
 }
@@ -59,24 +66,6 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 		if createResult.Error != nil {
 			return createResult.Error
 		}
-		// 我不知道为什么创建sql就可以,直接执行就提示我变量不匹配,估计是gorm.Expr和sql哪里不匹配
-		// orderResult := tx.Model(
-		// 	&model.SubtitleOrder{},
-		// ).Where(
-		// 	"project_id = ?",
-		// 	arg.ProjectId,
-		// ).Update(
-		// 	"order",
-		// 	gorm.Expr(
-		// 		"REPLACE(`order`, ',?,', ',?,?,')",
-		// 		arg.PreSubtitleId,
-		// 		subtitle.ID,
-		// 		arg.PreSubtitleId,
-		// 	),
-		// )
-		// if orderResult.Error != nil {
-		// 	return orderResult.Error
-		// }
 		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
@@ -209,4 +198,40 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 		return model.Subtitle{}, err
 	}
 	return sub, nil
+}
+
+func DeleteSubtitle(sub model.Subtitle) error {
+	result := Mdb.Delete(&sub)
+	if result.Error != nil {
+		return result.Error
+	}
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			orderResults := tx.Model(
+				&model.SubtitleOrder{},
+			).Where(
+				"project_id = ?",
+				sub.ProjectId,
+			).Update(
+				"order",
+				gorm.Expr(
+					"REPLACE(`order`, ',?,', ',')",
+					sub.ID,
+				),
+			)
+			if orderResults.Error != nil {
+				panic(orderResults.Error)
+			}
+			return orderResults
+		})
+		sqlResult := Mdb.Exec(sql)
+		if sqlResult.Error != nil {
+			return sqlResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

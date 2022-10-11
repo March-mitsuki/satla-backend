@@ -136,6 +136,15 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdDeleteSubtitle:
+			fmt.Println("--- c2s: Cmd Delete Subtitle ---")
+
+			err := m.handleDeleteSubtitle()
+			if err != nil {
+				fmt.Printf("delete subtitle err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}
