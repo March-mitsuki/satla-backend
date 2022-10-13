@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -295,6 +296,7 @@ func DirectSendSubtitle(sub model.Subtitle, pname string) (model.Subtitle, error
 		if searchResult.Error != nil {
 			return searchResult.Error
 		}
+		(&sub).SendTime = &sql.NullTime{Time: time.Now(), Valid: true}
 		(&sub).ProjectId = project.ID
 		(&sub).DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
 		createResult := tx.Create(&sub)
@@ -310,20 +312,50 @@ func DirectSendSubtitle(sub model.Subtitle, pname string) (model.Subtitle, error
 }
 
 func SendSubtitle(sub model.Subtitle) error {
-	// 发送字幕会软删除并且更新send_by行
-	result := Mdb.Model(
-		&sub,
-	).Select(
-		"send_by",
-		"deleted_at",
-	).UpdateColumns(model.Subtitle{
-		SendBy: sub.SendBy,
-		CustomeModel: model.CustomeModel{
-			DeletedAt: gorm.DeletedAt{Time: time.Now(), Valid: true},
-		},
+	// 发送字幕会软删除并且更新send_by行, 然后更新order行
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		updateResult := tx.Model(
+			&sub,
+		).Select(
+			"send_by",
+			"deleted_at",
+			"send_time",
+		).UpdateColumns(model.Subtitle{
+			SendBy:   sub.SendBy,
+			SendTime: &sql.NullTime{Time: time.Now(), Valid: true},
+			CustomeModel: model.CustomeModel{
+				DeletedAt: gorm.DeletedAt{Time: time.Now(), Valid: true},
+			},
+		})
+		if updateResult.Error != nil {
+			return updateResult.Error
+		}
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			orderResults := tx.Model(
+				&model.SubtitleOrder{},
+			).Where(
+				"project_id = ?",
+				sub.ProjectId,
+			).Update(
+				"order",
+				gorm.Expr(
+					"REPLACE(`order`, ',?,', ',')",
+					sub.ID,
+				),
+			)
+			if orderResults.Error != nil {
+				panic(orderResults.Error)
+			}
+			return orderResults
+		})
+		sqlResult := tx.Exec(sql)
+		if sqlResult.Error != nil {
+			return sqlResult.Error
+		}
+		return nil
 	})
-	if result.Error != nil {
-		return result.Error
+	if err != nil {
+		return err
 	}
 	return nil
 }
