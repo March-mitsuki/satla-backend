@@ -41,7 +41,7 @@ type Project struct {
 
 type User struct {
 	CustomeModel `gorm:"embedded"`
-	UserName     string `gorm:"not null;type:varchar(128)"`
+	UserName     string `gorm:"not null;type:varchar(128);unique"`
 	Email        string `gorm:"not null;type:varchar(256);uniqueIndex"`
 	PasswordHash string `gorm:"not null"`
 }

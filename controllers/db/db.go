@@ -1,6 +1,8 @@
 package db
 
 import (
+	"errors"
+	"fmt"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
@@ -224,6 +226,55 @@ func DeleteSubtitle(sub model.Subtitle) error {
 			}
 			return orderResults
 		})
+		sqlResult := Mdb.Exec(sql)
+		if sqlResult.Error != nil {
+			return sqlResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ReorderSubtitle(projectId, dragId, dropId uint) error {
+	// 当前不论从前往后拖还是从后往前拖, 拖动元素永远在放置元素的前面
+	// 所以db只需要一个逻辑
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var subtitles []model.Subtitle
+		searchResult := Mdb.Find(&subtitles, []uint{dragId, dropId})
+		if searchResult.Error != nil {
+			fmt.Printf("无法确认是否存在该字幕, 无法交换位置")
+			return searchResult.Error
+		} else if len(subtitles) < 2 {
+			return errors.New("只存在一方的字幕, 无法交换位置")
+		}
+		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			orderResults := tx.Model(
+				&model.SubtitleOrder{},
+			).Where(
+				"project_id = ?",
+				projectId,
+			).Update(
+				"order",
+				gorm.Expr(
+					"REPLACE(?, ',?,', ',?,?,')",
+					gorm.Expr(
+						"REPLACE(`order`, ',?,', ',')",
+						dragId,
+					),
+					dropId,
+					dragId,
+					dropId,
+				),
+			)
+			if orderResults.Error != nil {
+				panic(orderResults.Error)
+			}
+			return orderResults
+		})
+		// fmt.Printf("\n --- reorder sql is: \n - %v ---", sql)
 		sqlResult := Mdb.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error

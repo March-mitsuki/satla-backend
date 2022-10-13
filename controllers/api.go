@@ -23,7 +23,7 @@ func GetCurrentUserInfo(c *gin.Context) {
 		return
 	}
 	res := responseUserInfo{
-		Id:       int(user.ID),
+		Id:       user.ID,
 		UserName: user.UserName,
 		Email:    user.Email,
 	}

@@ -145,6 +145,24 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdReorderSubFront:
+			fmt.Println("--- c2s: Cmd Reorder Sub Front ---")
+
+			err := m.handleReorderSubFront()
+			if err != nil {
+				fmt.Printf("reorder sub front err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdReorderSubBack:
+			fmt.Println("--- c2s: Cmd Reorder Sub Back ---")
+
+			err := m.handleReorderSubBack()
+			if err != nil {
+				fmt.Printf("reorder sub back err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}

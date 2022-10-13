@@ -371,3 +371,123 @@ func (m *message) handleDeleteSubtitle() error {
 	m.data = data
 	return nil
 }
+
+func (m *message) handleReorderSubFront() error {
+	var wsData c2sReorderSub
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	var _data s2cReorderSub
+	err := db.ReorderSubtitle(
+		wsData.Body.ProjectId,
+		wsData.Body.DragId,
+		wsData.Body.DropId,
+	)
+	if err != nil {
+		_data = s2cReorderSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdReorderSubFront,
+			},
+			Body: struct {
+				OperationUser string "json:\"operation_user\""
+				Status        bool   "json:\"status\""
+				DragId        uint   "json:\"drag_id\""
+				DropId        uint   "json:\"drop_id\""
+			}{
+				OperationUser: wsData.Body.OperationUser,
+				Status:        true,
+				DragId:        wsData.Body.DragId,
+				DropId:        wsData.Body.DropId,
+			},
+		}
+	} else {
+		_data = s2cReorderSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdReorderSubFront,
+			},
+			Body: struct {
+				OperationUser string "json:\"operation_user\""
+				Status        bool   "json:\"status\""
+				DragId        uint   "json:\"drag_id\""
+				DropId        uint   "json:\"drop_id\""
+			}{
+				OperationUser: wsData.Body.OperationUser,
+				Status:        true,
+				DragId:        wsData.Body.DragId,
+				DropId:        wsData.Body.DropId,
+			},
+		}
+	}
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleReorderSubBack() error {
+	var wsData c2sReorderSub
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	var _data s2cReorderSub
+	err := db.ReorderSubtitle(
+		wsData.Body.ProjectId,
+		wsData.Body.DragId,
+		wsData.Body.DropId,
+	)
+	if err != nil {
+		_data = s2cReorderSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdReorderSubBack,
+			},
+			Body: struct {
+				OperationUser string "json:\"operation_user\""
+				Status        bool   "json:\"status\""
+				DragId        uint   "json:\"drag_id\""
+				DropId        uint   "json:\"drop_id\""
+			}{
+				OperationUser: wsData.Body.OperationUser,
+				Status:        false,
+				DragId:        wsData.Body.DragId,
+				DropId:        wsData.Body.DropId,
+			},
+		}
+	} else {
+		_data = s2cReorderSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdReorderSubBack,
+			},
+			Body: struct {
+				OperationUser string "json:\"operation_user\""
+				Status        bool   "json:\"status\""
+				DragId        uint   "json:\"drag_id\""
+				DropId        uint   "json:\"drop_id\""
+			}{
+				OperationUser: wsData.Body.OperationUser,
+				Status:        true,
+				DragId:        wsData.Body.DragId,
+				DropId:        wsData.Body.DropId,
+			},
+		}
+	}
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

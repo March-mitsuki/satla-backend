@@ -93,10 +93,12 @@ func SignupUser(c *gin.Context) {
 	json.Unmarshal(bodyRow, &body)
 	fmt.Printf("sign up body: %+v \n", body)
 
-	var search model.User
-	searchResult := db.Mdb.Where("email = ?", body.Email).First(&search)
-	if searchResult.Error == nil && search.Email == body.Email {
-		fmt.Println("已存在该用户,请直接登录")
+	var searchEmail model.User
+	var searchName model.User
+	searchEmailResult := db.Mdb.Where("email = ?", body.Email).First(&searchEmail)
+	searchNameResult := db.Mdb.Where("user_name = ?", body.UserName).First(&searchName)
+	if searchEmailResult.Error == nil && searchEmail.Email == body.Email {
+		fmt.Println("该email已注册,请直接登录")
 		jsonRes := jsonResponse{
 			-1,
 			statusSignupExistingUser,
@@ -104,9 +106,22 @@ func SignupUser(c *gin.Context) {
 		}
 		c.JSON(200, jsonRes)
 		return
-	} else if searchResult.Error != nil {
-		fmt.Println("未存在该用户,继续执行操作")
+	} else if searchEmailResult.Error != nil {
+		fmt.Println("未存在该email,继续执行操作")
 	}
+	if searchNameResult.Error == nil && searchName.UserName == body.UserName {
+		fmt.Println("该user name已注册,请直接登录")
+		jsonRes := jsonResponse{
+			-1,
+			statusSignupExistingUser,
+			"existing user, please login",
+		}
+		c.JSON(200, jsonRes)
+		return
+	} else if searchNameResult.Error != nil {
+		fmt.Println("未存在该email,继续执行操作")
+	}
+
 	newPassHash, encryptErr := encryptPassword(body.Password)
 	if encryptErr != nil {
 		fmt.Println("hash化密码失败")

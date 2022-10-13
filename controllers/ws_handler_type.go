@@ -33,6 +33,8 @@ const (
 	c2sCmdEditEnd          string = "editEnd"
 	c2sCmdAddTranslatedSub string = "addTransSub"
 	c2sCmdDeleteSubtitle   string = "deleteSubtitle"
+	c2sCmdReorderSubFront  string = "reorderSubFront" // 从前往后拖
+	c2sCmdReorderSubBack   string = "reorderSubBack"  // 从后往前拖
 )
 
 type s2cCmds string
@@ -47,6 +49,8 @@ const (
 	s2cCmdEditEnd          s2cCmds = "sEditEnd"
 	s2cCmdAddTranslatedSub s2cCmds = "sAddTransSub"
 	s2cCmdDeleteSubtitle   s2cCmds = "sDeleteSubtitle"
+	s2cCmdReorderSubFront  s2cCmds = "sReorderSubFront"
+	s2cCmdReorderSubBack   s2cCmds = "sReorderSubBack"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -111,6 +115,17 @@ type c2sDeleteSubtitle struct {
 	c2sHead
 	Body struct {
 		Subtitle model.Subtitle `json:"subtitle"`
+	} `json:"body"`
+}
+
+type c2sReorderSub struct {
+	// front和back只是cmd不同
+	c2sHead
+	Body struct {
+		OperationUser string `json:"operation_user"`
+		ProjectId     uint   `json:"project_id"`
+		DragId        uint   `json:"drag_id"`
+		DropId        uint   `json:"drop_id"`
 	} `json:"body"`
 }
 
@@ -185,5 +200,17 @@ type s2cDeleteSubtitle struct {
 	Body struct {
 		Status     bool `json:"status"`
 		SubtitleId uint `json:"subtitle_id"`
+	} `json:"body"`
+}
+
+type s2cReorderSub struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		OperationUser string `json:"operation_user"`
+		Status        bool   `json:"status"`
+		DragId        uint   `json:"drag_id"`
+		DropId        uint   `json:"drop_id"`
 	} `json:"body"`
 }
