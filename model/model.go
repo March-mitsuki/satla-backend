@@ -21,8 +21,9 @@ type Subtitle struct {
 	ProjectId    uint          `gorm:"not null" json:"project_id"`
 	TranslatedBy string        `gorm:"not null;type:varchar(128)" json:"translated_by"`
 	CheckedBy    string        `gorm:"type:varchar(128)" json:"checked_by"` // 为空字符串则为未校对
-	Subtitle     string        `gorm:"type:text" json:"subtitle"`           // 翻译
-	Origin       string        `gorm:"type:text" json:"origin"`             // 原文
+	SendBy       string        `gorm:"type:varchar(128)" json:"send_by"`
+	Subtitle     string        `gorm:"type:text" json:"subtitle"` // 翻译
+	Origin       string        `gorm:"type:text" json:"origin"`   // 原文
 }
 
 type SubtitleOrder struct {

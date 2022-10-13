@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"time"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
@@ -68,7 +69,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 		if createResult.Error != nil {
 			return createResult.Error
 		}
-		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
@@ -88,7 +89,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 			}
 			return orderResults
 		})
-		sqlResult := Mdb.Exec(sql)
+		sqlResult := tx.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error
 		}
@@ -112,7 +113,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 		if createResult.Error != nil {
 			return createResult.Error
 		}
-		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
@@ -132,7 +133,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 			}
 			return orderResults
 		})
-		sqlResult := Mdb.Exec(sql)
+		sqlResult := tx.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error
 		}
@@ -145,15 +146,14 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 }
 
 func ChangeSubtitle(arg ArgChangeSubtitle) error {
-	updateMap := map[string]interface{}{
-		"checked_by": arg.CheckedBy,
-		"subtitle":   arg.Subtitle,
-		"origin":     arg.Origin,
-	}
 	result := Mdb.Model(&model.Subtitle{}).Where(
 		"id = ?",
 		arg.ID,
-	).Updates(&updateMap)
+	).Select("checked_by", "subtitle", "origin").Updates(model.Subtitle{
+		CheckedBy: arg.CheckedBy,
+		Subtitle:  arg.Subtitle,
+		Origin:    arg.Origin,
+	})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -161,18 +161,18 @@ func ChangeSubtitle(arg ArgChangeSubtitle) error {
 }
 
 func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, error) {
-	var project model.Project
-	searchResult := Mdb.Where("project_name = ?", pname).First(&project)
-	if searchResult.Error != nil {
-		return model.Subtitle{}, searchResult.Error
-	}
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var project model.Project
+		searchResult := Mdb.Where("project_name = ?", pname).First(&project)
+		if searchResult.Error != nil {
+			return searchResult.Error
+		}
 		(&sub).ProjectId = project.ID
-		createResult := Mdb.Create(&sub)
+		createResult := tx.Create(&sub)
 		if createResult.Error != nil {
 			return createResult.Error
 		}
-		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
@@ -190,7 +190,7 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 			}
 			return orderResults
 		})
-		sqlResult := Mdb.Exec(sql)
+		sqlResult := tx.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error
 		}
@@ -203,12 +203,12 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 }
 
 func DeleteSubtitle(sub model.Subtitle) error {
-	result := Mdb.Delete(&sub)
-	if result.Error != nil {
-		return result.Error
-	}
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		delResult := tx.Delete(&sub)
+		if delResult.Error != nil {
+			return delResult.Error
+		}
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
@@ -226,7 +226,7 @@ func DeleteSubtitle(sub model.Subtitle) error {
 			}
 			return orderResults
 		})
-		sqlResult := Mdb.Exec(sql)
+		sqlResult := tx.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error
 		}
@@ -283,6 +283,47 @@ func ReorderSubtitle(projectId, dragId, dropId uint) error {
 	})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func DirectSendSubtitle(sub model.Subtitle, pname string) (model.Subtitle, error) {
+	// 直接发送会根据client发过来的sub新建一行已经被软删除了的subtitle (不更新order)
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var project model.Project
+		searchResult := tx.Where("project_name = ?", pname).First(&project)
+		if searchResult.Error != nil {
+			return searchResult.Error
+		}
+		(&sub).ProjectId = project.ID
+		(&sub).DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+		createResult := tx.Create(&sub)
+		if createResult.Error != nil {
+			return createResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return model.Subtitle{}, err
+	}
+	return sub, nil
+}
+
+func SendSubtitle(sub model.Subtitle) error {
+	// 发送字幕会软删除并且更新send_by行
+	result := Mdb.Model(
+		&sub,
+	).Select(
+		"send_by",
+		"deleted_at",
+	).UpdateColumns(model.Subtitle{
+		SendBy: sub.SendBy,
+		CustomeModel: model.CustomeModel{
+			DeletedAt: gorm.DeletedAt{Time: time.Now(), Valid: true},
+		},
+	})
+	if result.Error != nil {
+		return result.Error
 	}
 	return nil
 }

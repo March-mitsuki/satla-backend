@@ -5,6 +5,8 @@ import (
 )
 
 var WsHub = hub{
+	// 现在的hub没有向所有房间发送消息的逻辑
+	// 所有的逻辑都是向对应room（房间）中对应的connection（用户）发送信息
 	broadcast:  make(chan message),
 	castother:  make(chan message),
 	castself:   make(chan message),

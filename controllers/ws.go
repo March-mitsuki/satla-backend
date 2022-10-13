@@ -28,7 +28,13 @@ func (s subscription) readPump() {
 	c := s.conn
 	var cUname string
 	defer func() {
-		allRoomUsers.delUser(s.room, cUname)
+		err := allRoomUsers.delUser(s.room, cUname)
+		if err != nil {
+			// 如果发生错误则直接关闭连接并返回
+			c.ws.Close()
+			fmt.Println("ws close by read pump err close")
+			return
+		}
 		_closeMsgData := s2cChangeUser{
 			Head: struct {
 				Cmd s2cCmds "json:\"cmd\""
@@ -52,6 +58,7 @@ func (s subscription) readPump() {
 		WsHub.unregister <- s
 		c.ws.Close()
 		fmt.Println("ws close by read pump")
+		return
 	}()
 
 	for {
@@ -160,6 +167,24 @@ func (s subscription) readPump() {
 			err := m.handleReorderSubBack()
 			if err != nil {
 				fmt.Printf("reorder sub back err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdSendSubtitle:
+			fmt.Println("--- c2s: Cmd Send Subtitle ---")
+
+			err := m.handleSendSubtitle()
+			if err != nil {
+				fmt.Printf("send subtitle err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdSendSubtitleDirect:
+			fmt.Println("--- c2s: Cmd Send Subtitle Direct ---")
+
+			err := m.handleSendSubtitleDirect()
+			if err != nil {
+				fmt.Printf("send subtitle directly err %v \n", err)
 				return
 			}
 			WsHub.broadcast <- m

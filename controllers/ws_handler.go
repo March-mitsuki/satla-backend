@@ -19,13 +19,17 @@ func (rUser *roomUsers) addUser(roomid, uname string) {
 
 func (rUser *roomUsers) delUser(roomid, uname string) error {
 	// 删除指定room内的指定user, 若删除后房间内不存在user, 则会连房间一起删除
-	// 若不存在该房间则返回一个error
+	// 若不存在该房间或传入用户名为空值则返回一个error
+	if uname == "" {
+		return errors.New("user name is empty")
+	}
 	_, ok := (*rUser)[roomid]
 	if !ok {
 		return errors.New("no such room")
 	} else {
 		for idx, v := range (*rUser)[roomid] {
 			if v == uname {
+				// 如果房间内不存在该用户则不会触发删除逻辑, 函数遍历后返回nil
 				(*rUser)[roomid] = append((*rUser)[roomid][:idx], (*rUser)[roomid][idx+1:]...)
 				break
 			}
@@ -480,6 +484,102 @@ func (m *message) handleReorderSubBack() error {
 				Status:        true,
 				DragId:        wsData.Body.DragId,
 				DropId:        wsData.Body.DropId,
+			},
+		}
+	}
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleSendSubtitle() error {
+	var wsData c2sSendSubtitle
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	var _data s2cSendSubtitle
+	err := db.SendSubtitle(wsData.Body.Subtitle)
+	if err != nil {
+		_data = s2cSendSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdSendSubtitle,
+			},
+			Body: struct {
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
+			}{
+				Status:   false,
+				Subtitle: wsData.Body.Subtitle,
+			},
+		}
+	} else {
+		_data = s2cSendSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdSendSubtitle,
+			},
+			Body: struct {
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
+			}{
+				Status:   true,
+				Subtitle: wsData.Body.Subtitle,
+			},
+		}
+	}
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleSendSubtitleDirect() error {
+	var wsData c2sSendSubtitleDirect
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	var _data s2cSendSubtitle
+	sub, err := db.DirectSendSubtitle(wsData.Body.Subtitle, wsData.Body.Roomid)
+	if err != nil {
+		_data = s2cSendSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdSendSubtitleDirect,
+			},
+			Body: struct {
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
+			}{
+				Status:   false,
+				Subtitle: sub,
+			},
+		}
+	} else {
+		_data = s2cSendSubtitle{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdSendSubtitleDirect,
+			},
+			Body: struct {
+				Status   bool           "json:\"status\""
+				Subtitle model.Subtitle "json:\"subtitle\""
+			}{
+				Status:   true,
+				Subtitle: sub,
 			},
 		}
 	}

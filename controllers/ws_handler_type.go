@@ -24,33 +24,37 @@ type SubtitleFromClient struct {
 // s2c -> server to client
 
 const (
-	c2sCmdChangeUser       string = "changeUser"
-	c2sCmdGetRoomSubtitles string = "getRoomSubtitles"
-	c2sCmdAddSubtitleUp    string = "addSubtitleUp"
-	c2sCmdAddSubtitleDown  string = "addSubtitleDown"
-	c2sCmdChangeSubtitle   string = "changeSubtitle"
-	c2sCmdEditStart        string = "editStart"
-	c2sCmdEditEnd          string = "editEnd"
-	c2sCmdAddTranslatedSub string = "addTransSub"
-	c2sCmdDeleteSubtitle   string = "deleteSubtitle"
-	c2sCmdReorderSubFront  string = "reorderSubFront" // 从前往后拖
-	c2sCmdReorderSubBack   string = "reorderSubBack"  // 从后往前拖
+	c2sCmdChangeUser         string = "changeUser"
+	c2sCmdGetRoomSubtitles   string = "getRoomSubtitles"
+	c2sCmdAddSubtitleUp      string = "addSubtitleUp"
+	c2sCmdAddSubtitleDown    string = "addSubtitleDown"
+	c2sCmdChangeSubtitle     string = "changeSubtitle"
+	c2sCmdEditStart          string = "editStart"
+	c2sCmdEditEnd            string = "editEnd"
+	c2sCmdAddTranslatedSub   string = "addTransSub"
+	c2sCmdDeleteSubtitle     string = "deleteSubtitle"
+	c2sCmdReorderSubFront    string = "reorderSubFront" // 从前往后拖
+	c2sCmdReorderSubBack     string = "reorderSubBack"  // 从后往前拖
+	c2sCmdSendSubtitle       string = "sendSubtitle"
+	c2sCmdSendSubtitleDirect string = "sendSubtitleDirect"
 )
 
 type s2cCmds string
 
 const (
-	s2cCmdChangeUser       s2cCmds = "sChangeUser"
-	s2cCmdGetRoomSubtitles s2cCmds = "sGetRoomSubtitles"
-	s2cCmdAddSubtitleUp    s2cCmds = "sAddSubtitleUp"
-	s2cCmdAddSubtitleDown  s2cCmds = "sAddSubtitleDown"
-	s2cCmdChangeSubtitle   s2cCmds = "sChangeSubtitle"
-	s2cCmdEditStart        s2cCmds = "sEditStart"
-	s2cCmdEditEnd          s2cCmds = "sEditEnd"
-	s2cCmdAddTranslatedSub s2cCmds = "sAddTransSub"
-	s2cCmdDeleteSubtitle   s2cCmds = "sDeleteSubtitle"
-	s2cCmdReorderSubFront  s2cCmds = "sReorderSubFront"
-	s2cCmdReorderSubBack   s2cCmds = "sReorderSubBack"
+	s2cCmdChangeUser         s2cCmds = "sChangeUser"
+	s2cCmdGetRoomSubtitles   s2cCmds = "sGetRoomSubtitles"
+	s2cCmdAddSubtitleUp      s2cCmds = "sAddSubtitleUp"
+	s2cCmdAddSubtitleDown    s2cCmds = "sAddSubtitleDown"
+	s2cCmdChangeSubtitle     s2cCmds = "sChangeSubtitle"
+	s2cCmdEditStart          s2cCmds = "sEditStart"
+	s2cCmdEditEnd            s2cCmds = "sEditEnd"
+	s2cCmdAddTranslatedSub   s2cCmds = "sAddTransSub"
+	s2cCmdDeleteSubtitle     s2cCmds = "sDeleteSubtitle"
+	s2cCmdReorderSubFront    s2cCmds = "sReorderSubFront"
+	s2cCmdReorderSubBack     s2cCmds = "sReorderSubBack"
+	s2cCmdSendSubtitle       s2cCmds = "sSendSubtitle"
+	s2cCmdSendSubtitleDirect s2cCmds = "sSendSubtitleDirect"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -126,6 +130,21 @@ type c2sReorderSub struct {
 		ProjectId     uint   `json:"project_id"`
 		DragId        uint   `json:"drag_id"`
 		DropId        uint   `json:"drop_id"`
+	} `json:"body"`
+}
+
+type c2sSendSubtitle struct {
+	c2sHead
+	Body struct {
+		Subtitle model.Subtitle `json:"subtitle"`
+	} `json:"body"`
+}
+
+type c2sSendSubtitleDirect struct {
+	c2sHead
+	Body struct {
+		Roomid   string         `json:"roomid"`
+		Subtitle model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
 
@@ -212,5 +231,16 @@ type s2cReorderSub struct {
 		Status        bool   `json:"status"`
 		DragId        uint   `json:"drag_id"`
 		DropId        uint   `json:"drop_id"`
+	} `json:"body"`
+}
+
+type s2cSendSubtitle struct {
+	// 无论哪种发送方式回复都相同
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status   bool           `json:"status"`
+		Subtitle model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
