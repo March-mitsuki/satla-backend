@@ -37,6 +37,9 @@ const (
 	c2sCmdReorderSubBack     string = "reorderSubBack"  // 从后往前拖
 	c2sCmdSendSubtitle       string = "sendSubtitle"
 	c2sCmdSendSubtitleDirect string = "sendSubtitleDirect"
+	c2sCmdChangeStyle        string = "changeStyle"
+	c2sCmdChangeBilingual    string = "changeBilingual"
+	c2sCmdChangeReversed     string = "changeReversed"
 )
 
 type s2cCmds string
@@ -55,6 +58,9 @@ const (
 	s2cCmdReorderSubBack     s2cCmds = "sReorderSubBack"
 	s2cCmdSendSubtitle       s2cCmds = "sSendSubtitle"
 	s2cCmdSendSubtitleDirect s2cCmds = "sSendSubtitleDirect"
+	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
+	s2cCmdChangeBilingual    s2cCmds = "sChangeBilingual"
+	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -145,6 +151,28 @@ type c2sSendSubtitleDirect struct {
 	Body struct {
 		Roomid   string         `json:"roomid"`
 		Subtitle model.Subtitle `json:"subtitle"`
+	} `json:"body"`
+}
+
+type c2sChangeStyle struct {
+	c2sHead
+	Body struct {
+		Subtitle string `json:"subtitle"`
+		Origin   string `json:"origin"`
+	} `json:"body"`
+}
+
+type c2sChangeBilingual struct {
+	c2sHead
+	Body struct {
+		Bilingual bool `json:"bilingual"`
+	} `json:"body"`
+}
+
+type c2sChangeReversed struct {
+	c2sHead
+	Body struct {
+		Reversed bool `json:"reversed"`
 	} `json:"body"`
 }
 
@@ -242,5 +270,34 @@ type s2cSendSubtitle struct {
 	Body struct {
 		Status   bool           `json:"status"`
 		Subtitle model.Subtitle `json:"subtitle"`
+	} `json:"body"`
+}
+
+type s2cChangeStyle struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Reversed bool   `json:"reverse"`
+		Subtitle string `json:"subtitle"`
+		Origin   string `json:"origin"`
+	} `json:"body"`
+}
+
+type s2cChangeBilingual struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Bilingual bool `json:"bilingual"`
+	} `json:"body"`
+}
+
+type s2cChangeReversed struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Reversed bool `json:"reversed"`
 	} `json:"body"`
 }

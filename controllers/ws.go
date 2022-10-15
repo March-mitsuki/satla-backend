@@ -188,6 +188,33 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdChangeStyle:
+			fmt.Println("--- c2s: Cmd Change Style ---")
+
+			err := m.handleChangeStyle()
+			if err != nil {
+				fmt.Printf("change style err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdChangeBilingual:
+			fmt.Println("--- c2s: Cmd Change Bilingual ---")
+
+			err := m.handleChangeBilingual()
+			if err != nil {
+				fmt.Printf("change bilingual err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
+		case c2sCmdChangeReversed:
+			fmt.Println("--- c2s: Cmd Change Reversed ---")
+
+			err := m.handleChangeReversed()
+			if err != nil {
+				fmt.Printf("change reversed err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}
