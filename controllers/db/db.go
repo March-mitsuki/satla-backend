@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 	"vvvorld/model"
 
@@ -12,22 +13,25 @@ import (
 	"gorm.io/gorm"
 )
 
-func connectionDB() (*gorm.DB, error) {
+var Mdb *gorm.DB
+
+func ConnectionDB() error {
+	dns := os.Getenv("DB_DSN")
 	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN:                     model.Dsn,
+		DSN:                     dns,
 		DontSupportRenameIndex:  true,
 		DontSupportRenameColumn: true,
 	}), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	db.AutoMigrate(&model.Subtitle{}, &model.Project{}, &model.SubtitleOrder{}, &model.User{})
-	return db, nil
+	Mdb = db
+	Mdb.AutoMigrate(&model.Subtitle{}, &model.Project{}, &model.SubtitleOrder{}, &model.User{})
+	return nil
 }
 
-var Mdb, _ = connectionDB()
 var Rdb = redis.NewClient(&redis.Options{
 	Addr: "localhost:6379",
 })

@@ -16,5 +16,7 @@
 
 # 静态前端文件夹
 /dist
-# db dsn设置文件
-/model/db.go
+
+# dot env file
+*.local
+*.production

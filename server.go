@@ -2,17 +2,62 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"time"
 
 	"vvvorld/controllers"
+	"vvvorld/controllers/db"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
+
+func loadDotenv() error {
+	// 读取VVVRD_ENV和GIN_MODE, 若都为空则设置为开发模式
+	// 如果
+	const (
+		development string = "development"
+		production  string = "production"
+		test        string = "test"
+	)
+	env := os.Getenv("VVVRD_ENV")
+	ginMode := os.Getenv("GIN_MODE")
+	if env == "" && ginMode == "" {
+		env = development
+	} else if ginMode == "release" {
+		env = production
+	}
+	switch env {
+	case development:
+		fmt.Println("[notice] dotenv is runnning on 'dev' mode")
+		err := godotenv.Load(".env." + env + ".local")
+		if err != nil {
+			return err
+		}
+	case production:
+		fmt.Println("[notice] dotenv is runnning on 'production' mode")
+		err := godotenv.Load(".env." + env)
+		if err != nil {
+			return err
+		}
+	case test:
+		fmt.Println("[notice] dotenv is runnning on 'test' mode")
+		err := godotenv.Load(".env.local")
+		if err != nil {
+			return err
+		}
+	}
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("[notice] default .env file is undifine")
+	}
+	return nil
+}
 
 func directAccess(c *gin.Context) {
 	_, file := path.Split(c.Request.RequestURI)
@@ -26,7 +71,19 @@ func directAccess(c *gin.Context) {
 }
 
 func main() {
+	dotenvErr := loadDotenv()
+	if dotenvErr != nil {
+		fmt.Printf("\n [error] dotenv load err: %v \n", dotenvErr)
+		panic("--- dotenv loading err ---")
+	}
+	dbConnErr := db.ConnectionDB()
+	if dbConnErr != nil {
+		fmt.Printf("\n [error] db connection err: %v \n", dbConnErr)
+		panic("--- db connection error ---")
+	}
+
 	go controllers.WsHub.Run()
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -81,20 +138,15 @@ func main() {
 	})
 	r.GET("/ws/:roomid", func(c *gin.Context) {
 		roomid := c.Param("roomid")
-		// num, err := controllers.CheckLogin(c)
-		// if err != nil {
-		// 	fmt.Printf("check login err: %v \n", err)
-		// 	return
-		// }
-		// if num == 0 {
-		// 	return
-		// }
 		controllers.WsController(c, roomid)
 		return
 	})
 
 	api := r.Group("/api")
-	// api.Use(controllers.CheckLOginMidllerware())
+	if os.Getenv("GIN_MODE") == "release" {
+		// 在release模式中api启用登录检测
+		api.Use(controllers.CheckLOginMidllerware())
+	}
 	api.POST("/new_project", controllers.CreateNewProject)
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
