@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -14,7 +15,7 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		if origin == "http://192.168.64.3:8080" || origin == "http://localhost:3131" {
+		if origin == os.Getenv("CORS_ORIGIN") {
 			return true
 		} else {
 			return false
