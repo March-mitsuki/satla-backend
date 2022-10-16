@@ -27,34 +27,54 @@ func loadDotenv() error {
 	)
 	env := os.Getenv("VVVRD_ENV")
 	ginMode := os.Getenv("GIN_MODE")
-	if env == "" && ginMode == "" {
-		env = development
-	} else if ginMode == "release" {
+	if ginMode == "release" && env == "" {
 		env = production
+	} else {
+		if env == "" {
+			env = development
+		}
 	}
+
+	// 先读取 .env 若不存在 .env 则读取 .local
+	// 即若同时存在 .env 和 .local 则 .env 会覆盖掉 .local
 	switch env {
 	case development:
-		fmt.Println("[notice] dotenv is runnning on 'dev' mode")
-		err := godotenv.Load(".env." + env + ".local")
-		if err != nil {
-			return err
-		}
-	case production:
-		fmt.Println("[notice] dotenv is runnning on 'production' mode")
 		err := godotenv.Load(".env." + env)
 		if err != nil {
-			return err
+			localErr := godotenv.Load(".env." + env + ".local")
+			if localErr != nil {
+				fmt.Println("[error] development moed .env file is undefined")
+				return localErr
+			}
 		}
-	case test:
-		fmt.Println("[notice] dotenv is runnning on 'test' mode")
-		err := godotenv.Load(".env.local")
+		fmt.Println("[notice] dotenv is runnning on 'dev' mode")
+	case production:
+		err := godotenv.Load(".env." + env)
 		if err != nil {
-			return err
+			localErr := godotenv.Load(".env." + env + ".local")
+			if localErr != nil {
+				fmt.Println("[error] production moed .env file is undefined")
+				return localErr
+			}
 		}
+		fmt.Println("[notice] dotenv is runnning on 'production' mode")
+	case test:
+		err := godotenv.Load(".env." + env)
+		if err != nil {
+			localErr := godotenv.Load(".env." + env + ".local")
+			if localErr != nil {
+				fmt.Println("[error] test moed .env file is undefined")
+				return localErr
+			}
+		}
+		fmt.Println("[notice] dotenv is runnning on 'test' mode")
 	}
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("[notice] default .env file is undifine")
+		localErr := godotenv.Load(".env.local")
+		if localErr != nil {
+			fmt.Println("[notice] default .env file is undifine")
+		}
 	}
 	return nil
 }
@@ -142,19 +162,23 @@ func main() {
 		return
 	})
 
-	api := r.Group("/api")
-	if os.Getenv("GIN_MODE") == "release" {
-		// 在release模式中api启用登录检测
-		api.Use(controllers.CheckLoginMidllerware())
-	}
-	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
-	api.GET("/all_projects", controllers.GetAllProjects)
-
 	session := r.Group("/seesion")
 	session.POST("/login", controllers.LoginUser)
 	session.DELETE("/logout", controllers.LogoutUser)
 
-	admin := r.Group("/admin")
+	// sub route api -> /api
+	api := r.Group("/api")
+	if os.Getenv("GIN_MODE") == "release" {
+		api.Use(controllers.CheckLoginMidlleware())
+	}
+	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
+	api.GET("/all_projects", controllers.GetAllProjects)
+
+	// sub route admin -> /api/admin
+	admin := api.Group("/admin")
+	if os.Getenv("GIN_MODE") == "release" {
+		admin.Use(controllers.CheckAdminMiddleware())
+	}
 	admin.POST("/new_user", controllers.CreateNewUser)
 	admin.POST("/new_project", controllers.CreateNewProject)
 

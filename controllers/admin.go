@@ -5,6 +5,7 @@ import (
 	"vvvorld/controllers/db"
 	"vvvorld/model"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -116,4 +117,28 @@ func CreateNewProject(c *gin.Context) {
 	}
 	c.JSON(200, jsonRes)
 	return
+}
+
+func CheckAdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		s := sessions.Default(c)
+		email := s.Get(cookieUserEmail)
+		var operatedUser model.User
+		searchResult := db.Mdb.Where("email = ?", email).First(&operatedUser)
+		if searchResult.Error != nil {
+			c.AbortWithStatusJSON(403, gin.H{
+				"msg": "can not found user",
+			})
+			fmt.Println("---[admin]查找user出错---")
+			return
+		}
+		if *operatedUser.Permission != 2 {
+			c.AbortWithStatusJSON(403, gin.H{
+				"msg": "permission denied",
+			})
+			fmt.Println("---[admin]非管理员操作---")
+			return
+		}
+		c.Next()
+	}
 }
