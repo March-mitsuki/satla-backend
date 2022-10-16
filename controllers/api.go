@@ -30,37 +30,6 @@ func GetCurrentUserInfo(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-func CreateNewProject(c *gin.Context) {
-	buffer := make([]byte, 2048)
-	num, _ := c.Request.Body.Read(buffer)
-	var body createNewProjectBody
-	json.Unmarshal(buffer[0:num], &body)
-	// fmt.Printf("\n unmarshal body: %+v \n", body)
-	insertData := model.Project{
-		ProjectName: body.ProjectName,
-		Description: body.Description,
-		PointMan:    body.PointMan,
-		CreatedBy:   body.CreatedBy,
-	}
-	result := db.Mdb.Create(&insertData)
-	if result.Error != nil {
-		jsonRes := jsonResponse{
-			-1,
-			statusNewProjectErr,
-			"db create err",
-		}
-		c.JSON(200, jsonRes)
-		return
-	}
-	jsonRes := jsonResponse{
-		0,
-		2000,
-		"create new project successfully",
-	}
-	c.JSON(200, jsonRes)
-	return
-}
-
 func GetAllProjects(c *gin.Context) {
 	var projects []model.Project
 	result := db.Mdb.Find(&projects)

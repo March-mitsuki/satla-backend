@@ -147,14 +147,16 @@ func main() {
 		// 在release模式中api启用登录检测
 		api.Use(controllers.CheckLOginMidllerware())
 	}
-	api.POST("/new_project", controllers.CreateNewProject)
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
 
 	session := r.Group("/seesion")
 	session.POST("/login", controllers.LoginUser)
-	session.POST("/signup", controllers.SignupUser)
 	session.DELETE("/logout", controllers.LogoutUser)
+
+	admin := r.Group("/admin")
+	admin.POST("/new_user", controllers.CreateNewUser)
+	admin.POST("/new_project", controllers.CreateNewProject)
 
 	r.NoRoute(func(c *gin.Context) {
 		num, err := controllers.CheckLogin(c)
