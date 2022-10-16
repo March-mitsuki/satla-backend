@@ -27,7 +27,17 @@ func LoginUser(c *gin.Context) {
 	num, _ := c.Request.Body.Read(buffer)
 	bodyRow := buffer[0:num]
 	var body userLogin
-	json.Unmarshal(bodyRow, &body)
+	unmarshalErr := json.Unmarshal(bodyRow, &body)
+	if unmarshalErr != nil {
+		fmt.Println("json解析出错")
+		jsonRes := jsonResponse{
+			-1,
+			statusJsonErr,
+			"json unmarshal error",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
 	// fmt.Printf("user login: %+v \n", body)
 
 	var search model.User
@@ -90,7 +100,17 @@ func SignupUser(c *gin.Context) {
 	num, _ := c.Request.Body.Read(buffer)
 	bodyRow := buffer[0:num]
 	var body userSignup
-	json.Unmarshal(bodyRow, &body)
+	unmarshalErr := json.Unmarshal(bodyRow, &body)
+	if unmarshalErr != nil {
+		fmt.Println("json解析出错")
+		jsonRes := jsonResponse{
+			-1,
+			statusJsonErr,
+			"json unmarshal error",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
 	fmt.Printf("sign up body: %+v \n", body)
 
 	var searchEmail model.User
@@ -119,7 +139,7 @@ func SignupUser(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	} else if searchNameResult.Error != nil {
-		fmt.Println("未存在该email,继续执行操作")
+		fmt.Println("未存在该user name,继续执行操作")
 	}
 
 	newPassHash, encryptErr := encryptPassword(body.Password)
@@ -133,10 +153,12 @@ func SignupUser(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	}
-	var newUser model.User
-	newUser.UserName = body.UserName
-	newUser.Email = body.Email
-	newUser.PasswordHash = newPassHash
+	newUser := model.User{
+		UserName:     body.UserName,
+		Email:        body.Email,
+		PasswordHash: newPassHash,
+		Permission:   body.Permission,
+	}
 	createResult := db.Mdb.Create(&newUser)
 	if createResult.Error != nil {
 		fmt.Println("创建用户失败")

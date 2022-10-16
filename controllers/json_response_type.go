@@ -1,5 +1,7 @@
 package controllers
 
+type jsonResStatus uint
+
 type jsonResponse struct {
 	Code   int           `json:"code"` // 0 -> 成功, -1 -> 失败
 	Status jsonResStatus `json:"status"`
@@ -15,8 +17,6 @@ type jsonResponse struct {
 //	5000番 -> 服务端出错
 //
 // 5100番 -> login相关, 5200番 -> signup相关, 5300番 -> 登录后操作相关
-type jsonResStatus uint
-
 const (
 	statusLoginNoUser          jsonResStatus = 4101
 	statusLoginIncorrectPass   jsonResStatus = 4102
@@ -26,7 +26,7 @@ const (
 	statusSignupEncryptPassErr jsonResStatus = 5201
 	statusSignupDbCreateErr    jsonResStatus = 5202
 	statusGetUserErr           jsonResStatus = 5301
-	statusJsonMarshalErr       jsonResStatus = 5302
+	statusJsonErr              jsonResStatus = 5302
 	statusNewProjectErr        jsonResStatus = 5303
 	statusGetProjectsErr       jsonResStatus = 5304
 )

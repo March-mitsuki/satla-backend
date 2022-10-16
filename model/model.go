@@ -44,5 +44,6 @@ type User struct {
 	CustomeModel `gorm:"embedded"`
 	UserName     string `gorm:"not null;type:varchar(128);unique"`
 	Email        string `gorm:"not null;type:varchar(256);uniqueIndex"`
+	Permission   uint   `gorm:"not null;default:1"` // 0 -> 测试用户, 1 -> 普通用户, 2 -> 管理员
 	PasswordHash string `gorm:"not null"`
 }
