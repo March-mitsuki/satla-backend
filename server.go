@@ -145,7 +145,7 @@ func main() {
 	api := r.Group("/api")
 	if os.Getenv("GIN_MODE") == "release" {
 		// 在release模式中api启用登录检测
-		api.Use(controllers.CheckLOginMidllerware())
+		api.Use(controllers.CheckLoginMidllerware())
 	}
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)

@@ -70,7 +70,7 @@ func CreateNewUser(c *gin.Context) {
 		UserName:     body.UserName,
 		Email:        body.Email,
 		PasswordHash: newPassHash,
-		Permission:   body.Permission,
+		Permission:   &body.Permission,
 	}
 	createResult := db.Mdb.Create(&newUser)
 	if createResult.Error != nil {

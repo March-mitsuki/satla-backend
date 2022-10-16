@@ -131,7 +131,7 @@ func CheckLogin(c *gin.Context) (uint, error) {
 	return 1, nil
 }
 
-func CheckLOginMidllerware() gin.HandlerFunc {
+func CheckLoginMidllerware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := sessions.Default(c)
 		loginId := s.Get(cookieLoginId)
