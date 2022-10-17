@@ -166,21 +166,27 @@ func main() {
 	session.POST("/login", controllers.LoginUser)
 	session.DELETE("/logout", controllers.LogoutUser)
 
-	// sub route api -> /api
+	// sub route api, url -> /api
 	api := r.Group("/api")
 	if os.Getenv("GIN_MODE") == "release" {
-		api.Use(controllers.CheckLoginMidlleware())
+		api.Use(controllers.CheckLoginMidllewareAPI())
 	}
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
 
-	// sub route admin -> /api/admin
-	admin := api.Group("/admin")
+	// sub route adminApi, url -> /api/admin
+	adminApi := api.Group("/admin")
 	if os.Getenv("GIN_MODE") == "release" {
-		admin.Use(controllers.CheckAdminMiddleware())
+		adminApi.Use(controllers.CheckAdminMiddlewareAPI())
 	}
-	admin.POST("/new_user", controllers.CreateNewUser)
-	admin.POST("/new_project", controllers.CreateNewProject)
+	adminApi.POST("/new_user", controllers.CreateNewUser)
+	adminApi.POST("/new_project", controllers.CreateNewProject)
+
+	// url -> /admin, 访问后台页面时的检测
+	admin := r.Group("/admin")
+	admin.Use(controllers.CheckLoginMidllewarePage())
+	admin.Use(controllers.CheckAdminMiddlewarePage())
+	admin.GET("*all", directAccess)
 
 	r.NoRoute(func(c *gin.Context) {
 		num, err := controllers.CheckLogin(c)

@@ -131,7 +131,7 @@ func CheckLogin(c *gin.Context) (uint, error) {
 	return 1, nil
 }
 
-func CheckLoginMidlleware() gin.HandlerFunc {
+func CheckLoginMidllewareAPI() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := sessions.Default(c)
 		loginId := s.Get(cookieLoginId)
@@ -154,6 +154,32 @@ func CheckLoginMidlleware() gin.HandlerFunc {
 				"msg": "please try again",
 			})
 			fmt.Println("---[api]rbd查找出错---")
+			return
+		}
+		c.Next()
+	}
+}
+
+func CheckLoginMidllewarePage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		s := sessions.Default(c)
+		loginId := s.Get(cookieLoginId)
+		if loginId == nil {
+			c.Redirect(303, "/login")
+			c.Abort()
+			fmt.Println("---[login-page]请先登录---")
+			return
+		}
+		_, rdbGetErr := db.Rdb.Get(c, loginId.(string)).Result()
+		if rdbGetErr == redis.Nil {
+			c.Redirect(303, "/login")
+			c.Abort()
+			fmt.Println("---[login-page]session已过期---")
+			return
+		} else if rdbGetErr != nil {
+			c.Redirect(303, "/login")
+			c.Abort()
+			fmt.Println("---[login-page]rbd查找出错---")
 			return
 		}
 		c.Next()

@@ -119,7 +119,7 @@ func CreateNewProject(c *gin.Context) {
 	return
 }
 
-func CheckAdminMiddleware() gin.HandlerFunc {
+func CheckAdminMiddlewareAPI() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := sessions.Default(c)
 		email := s.Get(cookieUserEmail)
@@ -137,6 +137,28 @@ func CheckAdminMiddleware() gin.HandlerFunc {
 				"msg": "permission denied",
 			})
 			fmt.Println("---[admin]非管理员操作---")
+			return
+		}
+		c.Next()
+	}
+}
+
+func CheckAdminMiddlewarePage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		s := sessions.Default(c)
+		email := s.Get(cookieUserEmail)
+		var operatedUser model.User
+		searchResult := db.Mdb.Where("email = ?", email).First(&operatedUser)
+		if searchResult.Error != nil {
+			c.Redirect(303, "/login")
+			c.Abort()
+			fmt.Println("---[admin-page]查找user出错---")
+			return
+		}
+		if *operatedUser.Permission != 2 {
+			c.Redirect(303, "/404")
+			c.Abort()
+			fmt.Println("---[admin-page]非管理员操作---")
 			return
 		}
 		c.Next()
