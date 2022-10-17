@@ -23,9 +23,10 @@ func GetCurrentUserInfo(c *gin.Context) {
 		return
 	}
 	res := responseUserInfo{
-		Id:       user.ID,
-		UserName: user.UserName,
-		Email:    user.Email,
+		Id:         user.ID,
+		UserName:   user.UserName,
+		Email:      user.Email,
+		Permission: *user.Permission,
 	}
 	c.JSON(200, res)
 }
