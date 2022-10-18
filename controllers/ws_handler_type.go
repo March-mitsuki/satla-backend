@@ -40,6 +40,7 @@ const (
 	c2sCmdChangeStyle        string = "changeStyle"
 	c2sCmdChangeBilingual    string = "changeBilingual"
 	c2sCmdChangeReversed     string = "changeReversed"
+	c2sCmdHeartBeat          string = "heartBeat"
 )
 
 type s2cCmds string
@@ -61,6 +62,7 @@ const (
 	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
 	s2cCmdChangeBilingual    s2cCmds = "sChangeBilingual"
 	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
+	s2cCmdHeartBeat          s2cCmds = "sHeartBeat"
 )
 
 // 定义一个可复用的c2s head方便编写
@@ -173,6 +175,13 @@ type c2sChangeReversed struct {
 	c2sHead
 	Body struct {
 		Reversed bool `json:"reversed"`
+	} `json:"body"`
+}
+
+type c2sHeartBeat struct {
+	c2sHead
+	Body struct {
+		Obj string `json:"obj"`
 	} `json:"body"`
 }
 
@@ -299,5 +308,14 @@ type s2cChangeReversed struct {
 	} `json:"head"`
 	Body struct {
 		Reversed bool `json:"reversed"`
+	} `json:"body"`
+}
+
+type s2cHeartBeat struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Data interface{} `json:"data"`
 	} `json:"body"`
 }

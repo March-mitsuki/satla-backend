@@ -675,3 +675,31 @@ func (m *message) handleChangeReversed() error {
 	m.data = data
 	return nil
 }
+
+// 以后可能会利用心跳做点什么,但目前用不到这个代码
+func (m *message) handleHeartBeat() error {
+	var wsData c2sHeartBeat
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+
+	_data := s2cHeartBeat{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdHeartBeat,
+		},
+		Body: struct {
+			Data interface{} "json:\"data\""
+		}{
+			Data: "heartBeat",
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

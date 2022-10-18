@@ -216,6 +216,8 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdHeartBeat:
+			WsHub.castself <- m
 		default:
 			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
 		}
