@@ -138,6 +138,8 @@ func main() {
 		c.File("./dist")
 		return
 	})
+	// 设置不需要进行login check的
+	r.GET("/display/*roomid", directAccess)
 	r.GET("/login", directAccess)
 	r.GET("/signup", directAccess)
 	r.GET("/favicon.ico", func(c *gin.Context) {
