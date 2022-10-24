@@ -2,13 +2,14 @@ package db
 
 import (
 	"fmt"
+	"testing"
 	"vvvorld/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-func TestCreate() {
+func TestCreate(t *testing.T) {
 	subtitle := model.Subtitle{
 		InputTime:    "93:67:88",
 		ProjectId:    1,
@@ -18,7 +19,7 @@ func TestCreate() {
 	Mdb.Create(&subtitle)
 }
 
-func TestLockSql() {
+func TestLockSql(t *testing.T) {
 	// update会自动上锁, 先读后写才需要上for update的行锁
 	lockSql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
 		var subtitle model.Subtitle
@@ -30,7 +31,12 @@ func TestLockSql() {
 	fmt.Printf("\n -------create lock sql:\n %v --------- \n", lockSql)
 }
 
-func TestCreateSubtitleUp(arg ArgAddSubtitle) {
+func TestCreateSubtitleUp(t *testing.T) {
+	arg := ArgAddSubtitle{
+		1,
+		2,
+		"test",
+	}
 	sql := Mdb.ToSQL(func(tx *gorm.DB) *gorm.DB {
 		orderResults := tx.Model(
 			&model.SubtitleOrder{},
@@ -55,7 +61,7 @@ func TestCreateSubtitleUp(arg ArgAddSubtitle) {
 	fmt.Printf("\n -------create sql:\n %v --------- \n", sql)
 }
 
-func TestExpr() {
+func TestExpr(t *testing.T) {
 	Mdb.Model(
 		&model.SubtitleOrder{},
 	).Update(
