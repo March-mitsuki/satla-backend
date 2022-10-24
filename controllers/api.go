@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"vvvorld/controllers/db"
 	"vvvorld/model"
 
@@ -44,5 +45,44 @@ func GetAllProjects(c *gin.Context) {
 		return
 	}
 	c.JSON(200, projects)
+	return
+}
+
+func ChangeUserPassword(c *gin.Context) {
+	buffer := make([]byte, 2048)
+	num, _ := c.Request.Body.Read(buffer)
+	bodyRow := buffer[0:num]
+	var body reqChangePassBody
+	unmarshalErr := json.Unmarshal(bodyRow, &body)
+	if unmarshalErr != nil {
+		jsonRes := jsonResponse{
+			-1,
+			statusJsonErr,
+			"json unmarshal error",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	arg := db.ArgChangeUserPassword{
+		ID:      body.Id,
+		OldPass: body.OldPass,
+		NewPass: body.NewPass,
+	}
+	err := db.ChangeUserPassword(arg)
+	if err != nil {
+		jsonRes := jsonResponse{
+			-1,
+			statusChangePassDbErr,
+			fmt.Sprintln(err),
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	jsonRes := jsonResponse{
+		0,
+		statusSuccessful,
+		"password change successfully",
+	}
+	c.JSON(200, jsonRes)
 	return
 }

@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"vvvorld/controllers/password"
 	"vvvorld/model"
 
 	"github.com/go-redis/redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var Mdb *gorm.DB
@@ -355,6 +357,36 @@ func SendSubtitle(sub model.Subtitle) error {
 		sqlResult := tx.Exec(sql)
 		if sqlResult.Error != nil {
 			return sqlResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ChangeUserPassword(arg ArgChangeUserPassword) error {
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var user model.User
+		searchResult := tx.Clauses(clause.Locking{
+			Strength: "UPDATE",
+			Options:  "NOWAIT",
+		}).First(&user, arg.ID)
+		if searchResult.Error != nil {
+			return searchResult.Error
+		}
+		passErr := password.ComparePassword(user.PasswordHash, arg.OldPass)
+		if passErr != nil {
+			return passErr
+		}
+		newPassHash, encryptPassErr := password.EncryptPassword(arg.NewPass)
+		if encryptPassErr != nil {
+			return encryptPassErr
+		}
+		updateResult := tx.Model(&user).Update("password_hash", newPassHash)
+		if updateResult.Error != nil {
+			return updateResult.Error
 		}
 		return nil
 	})

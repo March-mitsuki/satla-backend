@@ -18,6 +18,7 @@ type jsonResponse struct {
 //
 // 5100番 -> login相关, 5200番 -> signup相关, 5300番 -> 登录后操作相关
 const (
+	statusSuccessful           jsonResStatus = 2000
 	statusLoginNoUser          jsonResStatus = 4101
 	statusLoginIncorrectPass   jsonResStatus = 4102
 	statusSignupExistingUser   jsonResStatus = 4201
@@ -29,6 +30,7 @@ const (
 	statusJsonErr              jsonResStatus = 5302
 	statusNewProjectErr        jsonResStatus = 5303
 	statusGetProjectsErr       jsonResStatus = 5304
+	statusChangePassDbErr      jsonResStatus = 5305
 )
 
 const (

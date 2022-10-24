@@ -5,22 +5,14 @@ import (
 	"time"
 
 	"vvvorld/controllers/db"
+	"vvvorld/controllers/password"
 	"vvvorld/model"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v9"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
-
-func encryptPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hash), err
-}
-func comparePassword(hash, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-}
 
 func LoginUser(c *gin.Context) {
 	buffer := make([]byte, 2048)
@@ -52,7 +44,7 @@ func LoginUser(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	}
-	if comparePassword(search.PasswordHash, body.Password) != nil {
+	if password.ComparePassword(search.PasswordHash, body.Password) != nil {
 		fmt.Println("密码不正确")
 		jsonRes := jsonResponse{
 			-1,

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"vvvorld/controllers/db"
+	"vvvorld/controllers/password"
 	"vvvorld/model"
 
 	"github.com/gin-contrib/sessions"
@@ -56,7 +57,7 @@ func CreateNewUser(c *gin.Context) {
 		fmt.Println("未存在该user name,继续执行操作")
 	}
 
-	newPassHash, encryptErr := encryptPassword(body.Password)
+	newPassHash, encryptErr := password.EncryptPassword(body.Password)
 	if encryptErr != nil {
 		fmt.Println("hash化密码失败")
 		jsonRes := jsonResponse{

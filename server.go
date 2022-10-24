@@ -175,6 +175,7 @@ func main() {
 	}
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
+	api.POST("/change_pass", controllers.ChangeUserPassword)
 
 	// sub route adminApi, url -> /api/admin
 	adminApi := api.Group("/admin")
