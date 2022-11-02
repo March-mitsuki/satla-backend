@@ -1,4 +1,4 @@
-module vvvorld
+module github.com/March-mitsuki/satla-backend
 
 go 1.19
 

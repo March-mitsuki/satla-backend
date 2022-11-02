@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"fmt"
-	"vvvorld/controllers/db"
-	"vvvorld/model"
+
+	"github.com/March-mitsuki/satla-backend/controllers/db"
+	"github.com/March-mitsuki/satla-backend/model"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

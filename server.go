@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"vvvorld/controllers"
-	"vvvorld/controllers/db"
+	"github.com/March-mitsuki/satla-backend/controllers"
+	"github.com/March-mitsuki/satla-backend/controllers/db"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"

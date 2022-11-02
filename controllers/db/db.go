@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"vvvorld/controllers/password"
-	"vvvorld/model"
+
+	"github.com/March-mitsuki/satla-backend/controllers/password"
+	"github.com/March-mitsuki/satla-backend/model"
 
 	"github.com/go-redis/redis/v9"
 	"gorm.io/driver/mysql"

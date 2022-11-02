@@ -3,7 +3,8 @@ package db
 import (
 	"fmt"
 	"testing"
-	"vvvorld/model"
+
+	"github.com/March-mitsuki/satla-backend/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

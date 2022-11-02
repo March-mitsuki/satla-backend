@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"vvvorld/model"
+	"github.com/March-mitsuki/satla-backend/model"
 )
 
 type roomUsers map[string][]string

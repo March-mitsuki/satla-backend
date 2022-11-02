@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"errors"
-	"vvvorld/controllers/db"
-	"vvvorld/model"
+
+	"github.com/March-mitsuki/satla-backend/controllers/db"
+	"github.com/March-mitsuki/satla-backend/model"
 )
 
 func (rUser *roomUsers) addUser(roomid, uname string) {

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"vvvorld/controllers/db"
-	"vvvorld/controllers/password"
-	"vvvorld/model"
+	"github.com/March-mitsuki/satla-backend/controllers/db"
+	"github.com/March-mitsuki/satla-backend/controllers/password"
+	"github.com/March-mitsuki/satla-backend/model"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
