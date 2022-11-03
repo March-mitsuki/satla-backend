@@ -8,6 +8,7 @@ https://github.com/March-mitsuki/satla-frontend
 
 ## how to use
 
+1. clone this repository
 1. `export GIN_MODE=release` export a environment variable to set gin mode
 1. create file named `.env.production.local` in root dir
 1. set up `DB_DSN` and `CORS_ORIGIN` in `.env.production.local` file
@@ -16,5 +17,6 @@ https://github.com/March-mitsuki/satla-frontend
 
 ## todo
 
-- [ ] db 的 dsn 连接可以改为阅读 envconfig 而不是在 modle 内定义 var
+- [x] db 的 dsn 连接可以改为阅读 envconfig 而不是在 modle 内定义 var
 - [x] 更改 user name 为 unique
+- [ ] 把 api 内的 db 操作移到 db 里面

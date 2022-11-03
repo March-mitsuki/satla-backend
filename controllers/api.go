@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/March-mitsuki/satla-backend/controllers/db"
 	"github.com/March-mitsuki/satla-backend/model"
@@ -39,7 +40,7 @@ func GetAllProjects(c *gin.Context) {
 	if result.Error != nil {
 		jsonRes := jsonResponse{
 			-1,
-			statusGetProjectsErr,
+			statusDataFindErr,
 			"db find err",
 		}
 		c.JSON(200, jsonRes)
@@ -47,6 +48,31 @@ func GetAllProjects(c *gin.Context) {
 	}
 	c.JSON(200, projects)
 	return
+}
+
+func GetProjectDetail(c *gin.Context) {
+	projectId, atoiErr := strconv.Atoi(c.Param("id"))
+	if atoiErr != nil {
+		jsonRes := jsonResponse{
+			-1,
+			statusReqParamErr,
+			"json unmarshal error",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	var roomLists []model.RoomList
+	result := db.Mdb.Where("project_id = ?", projectId).Find(&roomLists)
+	if result.Error != nil {
+		jsonRes := jsonResponse{
+			-1,
+			statusDataFindErr,
+			"can not find roomlist",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	c.JSON(200, roomLists)
 }
 
 func ChangeUserPassword(c *gin.Context) {

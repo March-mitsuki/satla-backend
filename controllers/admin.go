@@ -106,7 +106,7 @@ func CreateNewProject(c *gin.Context) {
 	if result.Error != nil {
 		jsonRes := jsonResponse{
 			-1,
-			statusNewProjectErr,
+			statusDataCreateErr,
 			"db create err",
 		}
 		c.JSON(200, jsonRes)

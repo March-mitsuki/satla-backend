@@ -31,7 +31,15 @@ func ConnectionDB() error {
 		return err
 	}
 	Mdb = db
-	Mdb.AutoMigrate(&model.Subtitle{}, &model.Project{}, &model.SubtitleOrder{}, &model.User{})
+	Mdb.AutoMigrate(
+		&model.User{},
+		&model.Project{},
+		&model.RoomList{},
+		&model.Subtitle{},
+		&model.SubtitleOrder{},
+		&model.AutoList{},
+		&model.AutoPlay{},
+	)
 	return nil
 }
 
@@ -54,8 +62,8 @@ func GetRoomSubtitles(roomid string) ([]model.Subtitle, string, error) {
 	orderResult := Mdb.Where("project_id = ?", project.ID).First(&order)
 	if orderResult.Error != nil {
 		newOrder := model.SubtitleOrder{
-			ProjectId: project.ID,
-			Order:     ",",
+			RoomId: project.ID,
+			Order:  ",",
 		}
 		newOrderResult := Mdb.Create(&newOrder)
 		if newOrderResult.Error != nil {
@@ -68,7 +76,7 @@ func GetRoomSubtitles(roomid string) ([]model.Subtitle, string, error) {
 func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 	subtitle := model.Subtitle{
 		InputTime:    "00:00:00",
-		ProjectId:    arg.ProjectId,
+		RoomId:       arg.ProjectId,
 		TranslatedBy: arg.CheckedBy,
 		CheckedBy:    arg.CheckedBy,
 	}
@@ -112,7 +120,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 	subtitle := model.Subtitle{
 		InputTime:    "00:00:00",
-		ProjectId:    arg.ProjectId,
+		RoomId:       arg.ProjectId,
 		TranslatedBy: arg.CheckedBy,
 		CheckedBy:    arg.CheckedBy,
 	}
@@ -175,7 +183,7 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 		if searchResult.Error != nil {
 			return searchResult.Error
 		}
-		(&sub).ProjectId = project.ID
+		(&sub).RoomId = project.ID
 		createResult := tx.Create(&sub)
 		if createResult.Error != nil {
 			return createResult.Error
@@ -185,7 +193,7 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 				&model.SubtitleOrder{},
 			).Where(
 				"project_id = ?",
-				sub.ProjectId,
+				sub.RoomId,
 			).Update(
 				"order",
 				gorm.Expr(
@@ -221,7 +229,7 @@ func DeleteSubtitle(sub model.Subtitle) error {
 				&model.SubtitleOrder{},
 			).Where(
 				"project_id = ?",
-				sub.ProjectId,
+				sub.RoomId,
 			).Update(
 				"order",
 				gorm.Expr(
@@ -304,7 +312,7 @@ func DirectSendSubtitle(sub model.Subtitle, pname string) (model.Subtitle, error
 			return searchResult.Error
 		}
 		(&sub).SendTime = &sql.NullTime{Time: time.Now(), Valid: true}
-		(&sub).ProjectId = project.ID
+		(&sub).RoomId = project.ID
 		(&sub).DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
 		createResult := tx.Create(&sub)
 		if createResult.Error != nil {
@@ -342,7 +350,7 @@ func SendSubtitle(sub model.Subtitle) error {
 				&model.SubtitleOrder{},
 			).Where(
 				"project_id = ?",
-				sub.ProjectId,
+				sub.RoomId,
 			).Update(
 				"order",
 				gorm.Expr(

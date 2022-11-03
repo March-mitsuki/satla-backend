@@ -138,7 +138,7 @@ func main() {
 		c.File("./dist")
 		return
 	})
-	// 设置不需要进行login check的
+	// 设置不需要进行login check的api
 	r.GET("/display/*roomid", directAccess)
 	r.GET("/login", directAccess)
 	r.GET("/signup", directAccess)
@@ -175,6 +175,7 @@ func main() {
 	}
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
+	api.GET("/project_detail/:id", controllers.GetProjectDetail)
 	api.POST("/change_pass", controllers.ChangeUserPassword)
 
 	// sub route adminApi, url -> /api/admin
