@@ -7,36 +7,36 @@ import (
 	"github.com/March-mitsuki/satla-backend/model"
 )
 
-func (rUser *roomUsers) addUser(roomid, uname string) {
+func (rUser *roomUsers) addUser(wsroom, uname string) {
 	// 如果存在该房间则直接追加new user, 若不存在则创建一个新房间并追加
-	_, ok := (*rUser)[roomid]
+	_, ok := (*rUser)[wsroom]
 	if !ok {
-		(*rUser)[roomid] = []string{uname}
+		(*rUser)[wsroom] = []string{uname}
 		return
 	}
-	(*rUser)[roomid] = append((*rUser)[roomid], uname)
+	(*rUser)[wsroom] = append((*rUser)[wsroom], uname)
 	return
 }
 
-func (rUser *roomUsers) delUser(roomid, uname string) error {
+func (rUser *roomUsers) delUser(wsroom, uname string) error {
 	// 删除指定room内的指定user, 若删除后房间内不存在user, 则会连房间一起删除
 	// 若不存在该房间或传入用户名为空值则返回一个error
 	if uname == "" {
 		return errors.New("user name is empty")
 	}
-	_, ok := (*rUser)[roomid]
+	_, ok := (*rUser)[wsroom]
 	if !ok {
 		return errors.New("no such room")
 	} else {
-		for idx, v := range (*rUser)[roomid] {
+		for idx, v := range (*rUser)[wsroom] {
 			if v == uname {
 				// 如果房间内不存在该用户则不会触发删除逻辑, 函数遍历后返回nil
-				(*rUser)[roomid] = append((*rUser)[roomid][:idx], (*rUser)[roomid][idx+1:]...)
+				(*rUser)[wsroom] = append((*rUser)[wsroom][:idx], (*rUser)[wsroom][idx+1:]...)
 				break
 			}
 		}
-		if length := len((*rUser)[roomid]); length == 0 {
-			delete(*rUser, roomid)
+		if length := len((*rUser)[wsroom]); length == 0 {
+			delete(*rUser, wsroom)
 		}
 		return nil
 	}
@@ -78,7 +78,7 @@ func (m *message) handleGetRoomSubtitles() error {
 	if unmarshalErr != nil {
 		return unmarshalErr
 	}
-	subtitles, order, dbGetErr := db.GetRoomSubtitles(wsData.Body.Roomid)
+	subtitles, order, dbGetErr := db.GetRoomSubtitles(wsData.Body.RoomId)
 	if dbGetErr != nil {
 		return dbGetErr
 	}
@@ -112,7 +112,7 @@ func (m *message) handleAddSubtitleUp() error {
 	}
 	arg := db.ArgAddSubtitle{
 		PreSubtitleId: wsData.Body.PreSubtitleId,
-		ProjectId:     wsData.Body.ProjectId,
+		RoomId:        wsData.Body.RoomId,
 		CheckedBy:     wsData.Body.CheckedBy,
 	}
 	newSubId, err := db.CreateSubtitleUp(arg)
@@ -126,12 +126,12 @@ func (m *message) handleAddSubtitleUp() error {
 			Cmd: s2cCmdAddSubtitleUp,
 		},
 		Body: struct {
-			ProjectId      uint   "json:\"project_id\""
+			RoomId         uint   "json:\"room_id\""
 			NewSubtitleId  uint   "json:\"new_subtitle_id\""
 			PreSubtitleIdx uint   "json:\"pre_subtitle_idx\""
 			CheckedBy      string "json:\"checked_by\""
 		}{
-			ProjectId:      wsData.Body.PreSubtitleId,
+			RoomId:         wsData.Body.RoomId,
 			PreSubtitleIdx: wsData.Body.PreSubtitleIdx,
 			NewSubtitleId:  newSubId,
 			CheckedBy:      wsData.Body.CheckedBy,
@@ -153,7 +153,7 @@ func (m *message) handleAddSubtitleDown() error {
 	}
 	arg := db.ArgAddSubtitle{
 		PreSubtitleId: wsData.Body.PreSubtitleId,
-		ProjectId:     wsData.Body.ProjectId,
+		RoomId:        wsData.Body.RoomId,
 		CheckedBy:     wsData.Body.CheckedBy,
 	}
 	newSubId, err := db.CreateSubtitleDown(arg)
@@ -167,12 +167,12 @@ func (m *message) handleAddSubtitleDown() error {
 			Cmd: s2cCmdAddSubtitleDown,
 		},
 		Body: struct {
-			ProjectId      uint   "json:\"project_id\""
+			RoomId         uint   "json:\"room_id\""
 			NewSubtitleId  uint   "json:\"new_subtitle_id\""
 			PreSubtitleIdx uint   "json:\"pre_subtitle_idx\""
 			CheckedBy      string "json:\"checked_by\""
 		}{
-			ProjectId:      wsData.Body.PreSubtitleId,
+			RoomId:         wsData.Body.RoomId,
 			PreSubtitleIdx: wsData.Body.PreSubtitleIdx,
 			NewSubtitleId:  newSubId,
 			CheckedBy:      wsData.Body.CheckedBy,
@@ -305,7 +305,6 @@ func (m *message) handleAddTranslatedSub() error {
 	// 这里收到的subtitle的id和project_id为0, 需要额外操作
 	newSub, dbErr := db.CreateTranslatedSub(
 		wsData.Body.NewSubtitle,
-		wsData.Body.ProjectName,
 	)
 	if dbErr != nil {
 		return dbErr
@@ -349,7 +348,7 @@ func (m *message) handleDeleteSubtitle() error {
 				Status     bool "json:\"status\""
 				SubtitleId uint "json:\"subtitle_id\""
 			}{
-				Status:     true,
+				Status:     false,
 				SubtitleId: wsData.Body.Subtitle.ID,
 			},
 		}
@@ -385,7 +384,7 @@ func (m *message) handleReorderSubFront() error {
 	}
 	var _data s2cReorderSub
 	err := db.ReorderSubtitle(
-		wsData.Body.ProjectId,
+		wsData.Body.RoomId,
 		wsData.Body.DragId,
 		wsData.Body.DropId,
 	)
@@ -445,7 +444,7 @@ func (m *message) handleReorderSubBack() error {
 	}
 	var _data s2cReorderSub
 	err := db.ReorderSubtitle(
-		wsData.Body.ProjectId,
+		wsData.Body.RoomId,
 		wsData.Body.DragId,
 		wsData.Body.DropId,
 	)
@@ -552,7 +551,7 @@ func (m *message) handleSendSubtitleDirect() error {
 		return unmarshalErr
 	}
 	var _data s2cSendSubtitle
-	sub, err := db.DirectSendSubtitle(wsData.Body.Subtitle, wsData.Body.Roomid)
+	sub, err := db.DirectSendSubtitle(wsData.Body.Subtitle)
 	if err != nil {
 		_data = s2cSendSubtitle{
 			Head: struct {

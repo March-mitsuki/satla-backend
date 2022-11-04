@@ -28,7 +28,7 @@ func (h *hub) Run() {
 			fmt.Println("when <-h.register", h.rooms)
 		case s := <-h.unregister:
 			connections := h.rooms[s.room]
-			fmt.Println("when <-h.unregister", h.rooms)
+			fmt.Println("when <-h.unregister ahead", h.rooms)
 			if connections != nil {
 				if _, ok := connections[s.conn]; ok {
 					delete(connections, s.conn)
@@ -38,7 +38,7 @@ func (h *hub) Run() {
 					}
 				}
 			}
-			fmt.Println("when <-h.unregister", h.rooms)
+			fmt.Println("when <-h.unregister behind", h.rooms)
 		case m := <-h.broadcast:
 			connections := h.rooms[m.room]
 			for c := range connections {

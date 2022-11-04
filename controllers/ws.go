@@ -32,6 +32,7 @@ func (s subscription) readPump() {
 		err := allRoomUsers.delUser(s.room, cUname)
 		if err != nil {
 			// 如果发生错误则直接关闭连接并返回
+			WsHub.unregister <- s
 			c.ws.Close()
 			fmt.Println("ws close by read pump err close")
 			return
@@ -248,7 +249,7 @@ func (s subscription) writePump() {
 	}
 }
 
-func WsController(c *gin.Context, roomid string) {
+func WsController(c *gin.Context, wsroom string) {
 	fmt.Println("ws controller called")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -261,7 +262,7 @@ func WsController(c *gin.Context, roomid string) {
 	}()
 
 	conn := &connection{send: make(chan []byte, 256), ws: ws}
-	sub := subscription{conn: conn, room: roomid}
+	sub := subscription{conn: conn, room: wsroom}
 	WsHub.register <- sub
 
 	go sub.writePump()

@@ -147,6 +147,7 @@ func main() {
 		return
 	})
 
+	// 测试服务器是否正常运行
 	r.GET("/test", func(c *gin.Context) {
 		type testMsg struct {
 			Code int    `json:"code"`
@@ -158,9 +159,12 @@ func main() {
 		}
 		c.JSON(200, res)
 	})
-	r.GET("/ws/:roomid", func(c *gin.Context) {
-		roomid := c.Param("roomid")
-		controllers.WsController(c, roomid)
+
+	// 为了保证房间名字unique, wsroom 为 RoomList model中的
+	// `${project_id}_${id}_${room_name}` 的形式 (js伪代码)
+	r.GET("/ws/:wsroom", func(c *gin.Context) {
+		wsroom := c.Param("roomid")
+		controllers.WsController(c, wsroom)
 		return
 	})
 

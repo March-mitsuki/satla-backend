@@ -84,7 +84,7 @@ type c2sChangeUser struct {
 type c2sGetRoomSubtitles struct {
 	c2sHead
 	Body struct {
-		Roomid string `json:"roomid"`
+		RoomId uint `json:"room_id"`
 	} `json:"body"`
 }
 
@@ -94,7 +94,7 @@ type c2sAddSubtitle struct {
 	Body struct {
 		PreSubtitleId  uint   `json:"pre_subtitle_id"`
 		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
-		ProjectId      uint   `json:"project_id"`
+		RoomId         uint   `json:"room_id"`
 		CheckedBy      string `json:"checked_by"`
 	} `json:"body"`
 }
@@ -118,7 +118,6 @@ type c2sEditChange struct {
 type c2sAddTranslatedSub struct {
 	c2sHead
 	Body struct {
-		ProjectName string         `json:"project_name"`
 		NewSubtitle model.Subtitle `json:"new_subtitle"`
 	} `json:"body"`
 }
@@ -135,7 +134,7 @@ type c2sReorderSub struct {
 	c2sHead
 	Body struct {
 		OperationUser string `json:"operation_user"`
-		ProjectId     uint   `json:"project_id"`
+		RoomId        uint   `json:"room_id"`
 		DragId        uint   `json:"drag_id"`
 		DropId        uint   `json:"drop_id"`
 	} `json:"body"`
@@ -151,7 +150,6 @@ type c2sSendSubtitle struct {
 type c2sSendSubtitleDirect struct {
 	c2sHead
 	Body struct {
-		Roomid   string         `json:"roomid"`
 		Subtitle model.Subtitle `json:"subtitle"`
 	} `json:"body"`
 }
@@ -212,7 +210,7 @@ type s2cAddSubtitle struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		ProjectId      uint   `json:"project_id"`
+		RoomId         uint   `json:"room_id"`
 		NewSubtitleId  uint   `json:"new_subtitle_id"`
 		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
 		CheckedBy      string `json:"checked_by"`

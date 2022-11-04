@@ -1,7 +1,7 @@
 package db
 
 type ArgAddSubtitle struct {
-	ProjectId     uint
+	RoomId        uint
 	PreSubtitleId uint
 	CheckedBy     string
 }

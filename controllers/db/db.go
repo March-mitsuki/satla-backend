@@ -47,22 +47,22 @@ var Rdb = redis.NewClient(&redis.Options{
 	Addr: "localhost:6379",
 })
 
-func GetRoomSubtitles(roomid string) ([]model.Subtitle, string, error) {
-	var project model.Project
-	pidResult := Mdb.Where("project_name = ?", roomid).First(&project)
+func GetRoomSubtitles(roomId uint) ([]model.Subtitle, string, error) {
+	var room model.RoomList
+	pidResult := Mdb.First(&room, roomId)
 	if pidResult.Error != nil {
 		return nil, "", pidResult.Error
 	}
 	var subtitles []model.Subtitle
-	subResult := Mdb.Where("project_id = ?", project.ID).Find(&subtitles)
+	subResult := Mdb.Where("room_id = ?", room.ID).Find(&subtitles)
 	if subResult.Error != nil {
 		return nil, "", subResult.Error
 	}
 	var order model.SubtitleOrder
-	orderResult := Mdb.Where("project_id = ?", project.ID).First(&order)
+	orderResult := Mdb.Where("room_id = ?", room.ID).First(&order)
 	if orderResult.Error != nil {
 		newOrder := model.SubtitleOrder{
-			RoomId: project.ID,
+			RoomId: room.ID,
 			Order:  ",",
 		}
 		newOrderResult := Mdb.Create(&newOrder)
@@ -76,7 +76,7 @@ func GetRoomSubtitles(roomid string) ([]model.Subtitle, string, error) {
 func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 	subtitle := model.Subtitle{
 		InputTime:    "00:00:00",
-		RoomId:       arg.ProjectId,
+		RoomId:       arg.RoomId,
 		TranslatedBy: arg.CheckedBy,
 		CheckedBy:    arg.CheckedBy,
 	}
@@ -90,7 +90,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 				&model.SubtitleOrder{},
 			).Where(
 				"project_id = ?",
-				arg.ProjectId,
+				arg.RoomId,
 			).Update(
 				"order",
 				gorm.Expr(
@@ -120,7 +120,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 	subtitle := model.Subtitle{
 		InputTime:    "00:00:00",
-		RoomId:       arg.ProjectId,
+		RoomId:       arg.RoomId,
 		TranslatedBy: arg.CheckedBy,
 		CheckedBy:    arg.CheckedBy,
 	}
@@ -134,7 +134,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 				&model.SubtitleOrder{},
 			).Where(
 				"project_id = ?",
-				arg.ProjectId,
+				arg.RoomId,
 			).Update(
 				"order",
 				gorm.Expr(
@@ -176,14 +176,14 @@ func ChangeSubtitle(arg ArgChangeSubtitle) error {
 	return nil
 }
 
-func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, error) {
+func CreateTranslatedSub(sub model.Subtitle) (model.Subtitle, error) {
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		var project model.Project
-		searchResult := Mdb.Where("project_name = ?", pname).First(&project)
+		var room model.RoomList
+		searchResult := tx.First(&room, sub.RoomId)
 		if searchResult.Error != nil {
 			return searchResult.Error
 		}
-		(&sub).RoomId = project.ID
+		(&sub).RoomId = room.ID
 		createResult := tx.Create(&sub)
 		if createResult.Error != nil {
 			return createResult.Error
@@ -192,7 +192,7 @@ func CreateTranslatedSub(sub model.Subtitle, pname string) (model.Subtitle, erro
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				sub.RoomId,
 			).Update(
 				"order",
@@ -228,7 +228,7 @@ func DeleteSubtitle(sub model.Subtitle) error {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				sub.RoomId,
 			).Update(
 				"order",
@@ -254,7 +254,7 @@ func DeleteSubtitle(sub model.Subtitle) error {
 	return nil
 }
 
-func ReorderSubtitle(projectId, dragId, dropId uint) error {
+func ReorderSubtitle(roomId, dragId, dropId uint) error {
 	// 当前不论从前往后拖还是从后往前拖, 拖动元素永远在放置元素的前面
 	// 所以db只需要一个逻辑
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
@@ -270,8 +270,8 @@ func ReorderSubtitle(projectId, dragId, dropId uint) error {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
-				projectId,
+				"room_id = ?",
+				roomId,
 			).Update(
 				"order",
 				gorm.Expr(
@@ -303,25 +303,13 @@ func ReorderSubtitle(projectId, dragId, dropId uint) error {
 	return nil
 }
 
-func DirectSendSubtitle(sub model.Subtitle, pname string) (model.Subtitle, error) {
+func DirectSendSubtitle(sub model.Subtitle) (model.Subtitle, error) {
 	// 直接发送会根据client发过来的sub新建一行已经被软删除了的subtitle (不更新order)
-	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		var project model.Project
-		searchResult := tx.Where("project_name = ?", pname).First(&project)
-		if searchResult.Error != nil {
-			return searchResult.Error
-		}
-		(&sub).SendTime = &sql.NullTime{Time: time.Now(), Valid: true}
-		(&sub).RoomId = project.ID
-		(&sub).DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
-		createResult := tx.Create(&sub)
-		if createResult.Error != nil {
-			return createResult.Error
-		}
-		return nil
-	})
-	if err != nil {
-		return model.Subtitle{}, err
+	(&sub).SendTime = &sql.NullTime{Time: time.Now(), Valid: true}
+	(&sub).DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+	createResult := Mdb.Create(&sub)
+	if createResult.Error != nil {
+		return model.Subtitle{}, createResult.Error
 	}
 	return sub, nil
 }
@@ -349,7 +337,7 @@ func SendSubtitle(sub model.Subtitle) error {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				sub.RoomId,
 			).Update(
 				"order",
