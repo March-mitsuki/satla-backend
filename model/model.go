@@ -64,8 +64,9 @@ type AutoList struct {
 	Memo          string `gorm:"type:varchar(128)" json:"memo"`
 }
 
-type AutoPlay struct {
+type AutoSub struct {
 	CustomeModel `gorm:"embedded"`
+	RoomId       uint    `gorm:"not null" json:"room_id"`
 	ListId       uint    `gorm:"not null" json:"list_id"`
 	Subtitle     string  `gorm:"type:text" json:"subtitle"`
 	Origin       string  `gorm:"type:text" json:"origin"`

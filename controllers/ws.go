@@ -217,6 +217,25 @@ func (s subscription) readPump() {
 				return
 			}
 			WsHub.broadcast <- m
+		case c2sCmdGetAutoLists:
+			// 从这里往下是auto page
+			fmt.Println("--- c2s Cmd Get Auto Lists ---")
+
+			err := m.handleGetRoomAutoLists()
+			if err != nil {
+				fmt.Printf("get auto lists err %v \n", err)
+				return
+			}
+			WsHub.castself <- m
+		case c2sCmdAddAutoSub:
+			fmt.Println("--- c2s: Cmd Add Auto Sub ---")
+
+			err := m.handleAddAutoSub()
+			if err != nil {
+				fmt.Printf("add auto sub err %v \n", err)
+				return
+			}
+			WsHub.broadcast <- m
 		case c2sCmdHeartBeat:
 			WsHub.castself <- m
 		default:

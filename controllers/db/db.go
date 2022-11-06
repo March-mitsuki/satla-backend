@@ -26,6 +26,7 @@ func ConnectionDB() error {
 		DontSupportRenameColumn: true,
 	}), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
+		CreateBatchSize:                          1000,
 	})
 	if err != nil {
 		return err
@@ -38,7 +39,7 @@ func ConnectionDB() error {
 		&model.Subtitle{},
 		&model.SubtitleOrder{},
 		&model.AutoList{},
-		&model.AutoPlay{},
+		&model.AutoSub{},
 	)
 	return nil
 }
@@ -48,27 +49,33 @@ var Rdb = redis.NewClient(&redis.Options{
 })
 
 func GetRoomSubtitles(roomId uint) ([]model.Subtitle, string, error) {
-	var room model.RoomList
-	pidResult := Mdb.First(&room, roomId)
-	if pidResult.Error != nil {
-		return nil, "", pidResult.Error
-	}
 	var subtitles []model.Subtitle
-	subResult := Mdb.Where("room_id = ?", room.ID).Find(&subtitles)
-	if subResult.Error != nil {
-		return nil, "", subResult.Error
-	}
 	var order model.SubtitleOrder
-	orderResult := Mdb.Where("room_id = ?", room.ID).First(&order)
-	if orderResult.Error != nil {
-		newOrder := model.SubtitleOrder{
-			RoomId: room.ID,
-			Order:  ",",
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var room model.RoomList
+		pidResult := tx.First(&room, roomId)
+		if pidResult.Error != nil {
+			return pidResult.Error
 		}
-		newOrderResult := Mdb.Create(&newOrder)
-		if newOrderResult.Error != nil {
-			return nil, "", newOrderResult.Error
+		subResult := tx.Where("room_id = ?", room.ID).Find(&subtitles)
+		if subResult.Error != nil {
+			return subResult.Error
 		}
+		orderResult := tx.Where("room_id = ?", room.ID).First(&order)
+		if orderResult.Error != nil {
+			newOrder := model.SubtitleOrder{
+				RoomId: room.ID,
+				Order:  ",",
+			}
+			newOrderResult := tx.Create(&newOrder)
+			if newOrderResult.Error != nil {
+				return newOrderResult.Error
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return []model.Subtitle{}, "", err
 	}
 	return subtitles, order.Order, nil
 }
@@ -391,4 +398,52 @@ func ChangeUserPassword(arg ArgChangeUserPassword) error {
 		return err
 	}
 	return nil
+}
+
+func GetRoomAutoLists(roomId uint) ([]model.AutoList, error) {
+	var autoLists []model.AutoList
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var room model.RoomList
+		pidResult := tx.First(&room, roomId)
+		if pidResult.Error != nil {
+			return pidResult.Error
+		}
+		subResult := tx.Where("room_id = ?", room.ID).Find(&autoLists)
+		if subResult.Error != nil {
+			return subResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return autoLists, err
+	}
+	return autoLists, nil
+}
+
+func AddAutoSub(arg ArgAddAutoSub) (model.AutoList, error) {
+	var autoList model.AutoList
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		autoList = model.AutoList{
+			RoomId:        arg.AutoSubs[0].RoomId,
+			FirstSubtitle: arg.AutoSubs[0].Subtitle,
+			FirstOrigin:   arg.AutoSubs[0].Origin,
+			Memo:          arg.Memo,
+		}
+		createListResult := tx.Create(&autoList)
+		if createListResult.Error != nil {
+			return createListResult.Error
+		}
+		for _, v := range arg.AutoSubs {
+			(&v).ListId = autoList.ID
+		}
+		createAllAutoSub := tx.Create(&arg.AutoSubs)
+		if createAllAutoSub.Error != nil {
+			return createAllAutoSub.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return model.AutoList{}, err
+	}
+	return autoList, nil
 }
