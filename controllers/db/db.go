@@ -433,8 +433,9 @@ func AddAutoSub(arg ArgAddAutoSub) (model.AutoList, error) {
 		if createListResult.Error != nil {
 			return createListResult.Error
 		}
-		for _, v := range arg.AutoSubs {
-			(&v).ListId = autoList.ID
+		for i := 0; i < len(arg.AutoSubs); i++ {
+			elem := &arg.AutoSubs[i]
+			elem.ListId = autoList.ID
 		}
 		createAllAutoSub := tx.Create(&arg.AutoSubs)
 		if createAllAutoSub.Error != nil {
