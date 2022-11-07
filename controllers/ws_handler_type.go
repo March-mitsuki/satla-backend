@@ -40,6 +40,7 @@ const (
 const (
 	c2sCmdGetAutoLists string = "getRoomAutoLists"
 	c2sCmdAddAutoSub   string = "addAutoSub"
+	c2sCmdPlayStart    string = "playStart"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -64,7 +65,9 @@ const (
 	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
 )
 const (
-	s2cCmdGetAutoLists s2cCmds = "sGetRoomAutoLists"
-	s2cCmdAddAutoSub   s2cCmds = "sAddAutoSub"
+	s2cCmdGetAutoLists  s2cCmds = "sGetRoomAutoLists"
+	s2cCmdAddAutoSub    s2cCmds = "sAddAutoSub"
+	s2cCmdAutoPlayErr   s2cCmds = "autoPlayErr"
+	s2cCmdAutoChangeSub s2cCmds = "autoChangeSub"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

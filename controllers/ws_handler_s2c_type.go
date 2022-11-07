@@ -148,6 +148,24 @@ type s2cAddAutoSub struct {
 	} `json:"body"`
 }
 
+type s2cAutoPlayErr struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Msg string `json:"msg"`
+	} `json:"body"`
+}
+
+type s2cAutoChangeSub struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Subtitle model.AutoSub `json:"subtitle"`
+	} `json:"body"`
+}
+
 type s2cHeartBeat struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`

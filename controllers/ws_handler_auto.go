@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/March-mitsuki/satla-backend/utils/logger"
+
 	"github.com/March-mitsuki/satla-backend/controllers/db"
 	"github.com/March-mitsuki/satla-backend/model"
 )
@@ -107,6 +109,55 @@ func (m *message) handleAddAutoSub() error {
 	}
 	m.data = data
 	return nil
+}
+
+func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
+	data := s2cAutoChangeSub{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoChangeSub,
+		},
+		Body: struct {
+			Subtitle model.AutoSub "json:\"subtitle\""
+		}{
+			Subtitle: s,
+		},
+	}
+	return data
+}
+
+func AutoPlayStart(m message) {
+	logger.Info("auto play start")
+	var wsData c2sPlayStart
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		logger.Err(fmt.Sprintf("unmarshal wsData ERROR === \n %v \n ===", unmarshalErr))
+		return
+	}
+	var autoSubs []model.AutoSub
+	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
+	if result.Error != nil {
+		logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
+		return
+	}
+	for _, v := range autoSubs {
+		_data := makeAutoChangeSub(v)
+		data, marshalErr := json.Marshal(&_data)
+		if marshalErr != nil {
+			logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
+			return
+		}
+		(&m).data = data
+		d, dErr := time.ParseDuration(fmt.Sprintf("%vs", v.Duration))
+		if dErr != nil {
+			logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
+			return
+		}
+		WsHub.broadcast <- m
+		time.Sleep(d)
+	}
+	return
 }
 
 func cancelableSleep() {
