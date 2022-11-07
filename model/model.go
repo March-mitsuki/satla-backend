@@ -22,7 +22,7 @@ type Project struct {
 	CreatedBy    string `gorm:"not null;type:varchar(128)" json:"created_by"`
 }
 
-type RoomList struct {
+type Room struct {
 	CustomeModel `gorm:"embedded"`
 	ProjectId    uint   `gorm:"not null" json:"project_id"`
 	RoomName     string `gorm:"not null;type:varchar(128)" json:"room_name"`

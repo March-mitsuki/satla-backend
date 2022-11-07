@@ -35,7 +35,7 @@ func ConnectionDB() error {
 	Mdb.AutoMigrate(
 		&model.User{},
 		&model.Project{},
-		&model.RoomList{},
+		&model.Room{},
 		&model.Subtitle{},
 		&model.SubtitleOrder{},
 		&model.AutoList{},
@@ -52,7 +52,7 @@ func GetRoomSubtitles(roomId uint) ([]model.Subtitle, string, error) {
 	var subtitles []model.Subtitle
 	var order model.SubtitleOrder
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		var room model.RoomList
+		var room model.Room
 		pidResult := tx.First(&room, roomId)
 		if pidResult.Error != nil {
 			return pidResult.Error
@@ -185,7 +185,7 @@ func ChangeSubtitle(arg ArgChangeSubtitle) error {
 
 func CreateTranslatedSub(sub model.Subtitle) (model.Subtitle, error) {
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		var room model.RoomList
+		var room model.Room
 		searchResult := tx.First(&room, sub.RoomId)
 		if searchResult.Error != nil {
 			return searchResult.Error
@@ -403,7 +403,7 @@ func ChangeUserPassword(arg ArgChangeUserPassword) error {
 func GetRoomAutoLists(roomId uint) ([]model.AutoList, error) {
 	var autoLists []model.AutoList
 	err := Mdb.Transaction(func(tx *gorm.DB) error {
-		var room model.RoomList
+		var room model.Room
 		pidResult := tx.First(&room, roomId)
 		if pidResult.Error != nil {
 			return pidResult.Error

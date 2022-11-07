@@ -121,6 +121,37 @@ func CreateNewProject(c *gin.Context) {
 	return
 }
 
+func CreateNewRoom(c *gin.Context) {
+	buffer := make([]byte, 2048)
+	num, _ := c.Request.Body.Read(buffer)
+	var body createNewRoomBody
+	json.Unmarshal(buffer[0:num], &body)
+	insertData := model.Room{
+		ProjectId:   body.ProjectId,
+		RoomName:    body.RoomName,
+		RoomType:    body.RoomType,
+		Description: body.Description,
+	}
+	result := db.Mdb.Create(&insertData)
+	var jsonRes jsonResponse
+	if result.Error != nil {
+		jsonRes = jsonResponse{
+			-1,
+			statusDataCreateErr,
+			"db create err",
+		}
+		c.JSON(200, jsonRes)
+		return
+	}
+	jsonRes = jsonResponse{
+		0,
+		2000,
+		"create new room successfully",
+	}
+	c.JSON(200, jsonRes)
+	return
+}
+
 func CheckAdminMiddlewareAPI() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := sessions.Default(c)

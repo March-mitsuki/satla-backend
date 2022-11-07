@@ -61,8 +61,8 @@ func GetProjectDetail(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	}
-	var roomLists []model.RoomList
-	result := db.Mdb.Where("project_id = ?", projectId).Find(&roomLists)
+	var rooms []model.Room
+	result := db.Mdb.Where("project_id = ?", projectId).Find(&rooms)
 	if result.Error != nil {
 		jsonRes := jsonResponse{
 			-1,
@@ -72,7 +72,7 @@ func GetProjectDetail(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	}
-	c.JSON(200, roomLists)
+	c.JSON(200, rooms)
 }
 
 func ChangeUserPassword(c *gin.Context) {

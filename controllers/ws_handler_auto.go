@@ -1,6 +1,10 @@
 package controllers
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/March-mitsuki/satla-backend/controllers/db"
 	"github.com/March-mitsuki/satla-backend/model"
 )
@@ -103,4 +107,24 @@ func (m *message) handleAddAutoSub() error {
 	}
 	m.data = data
 	return nil
+}
+
+func cancelableSleep() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		fmt.Println("sleep done")
+		cancel()
+		return
+	}()
+	go func() {
+		t := time.Now()
+		select {
+		case <-ctx.Done():
+		case <-time.After(2 * time.Second):
+		}
+		fmt.Printf("here after: %v\n", time.Since(t))
+	}()
+	cancel()
+	time.Sleep(3 * time.Second)
+	fmt.Println("done")
 }

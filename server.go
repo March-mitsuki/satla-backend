@@ -189,6 +189,7 @@ func main() {
 	}
 	adminApi.POST("/new_user", controllers.CreateNewUser)
 	adminApi.POST("/new_project", controllers.CreateNewProject)
+	adminApi.POST("/new_room", controllers.CreateNewRoom)
 
 	// url -> /admin, 访问后台页面时的检测
 	admin := r.Group("/admin")
