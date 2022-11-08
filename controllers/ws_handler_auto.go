@@ -119,9 +119,9 @@ func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 			Cmd: s2cCmdAutoChangeSub,
 		},
 		Body: struct {
-			Subtitle model.AutoSub "json:\"subtitle\""
+			AutoSub model.AutoSub "json:\"auto_sub\""
 		}{
-			Subtitle: s,
+			AutoSub: s,
 		},
 	}
 	return data

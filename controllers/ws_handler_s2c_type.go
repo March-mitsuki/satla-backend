@@ -162,7 +162,7 @@ type s2cAutoChangeSub struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Subtitle model.AutoSub `json:"subtitle"`
+		AutoSub model.AutoSub `json:"auto_sub"`
 	} `json:"body"`
 }
 
