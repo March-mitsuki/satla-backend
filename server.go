@@ -163,7 +163,7 @@ func main() {
 	// 为了保证房间名字unique, wsroom 为 RoomList model中的
 	// `${project_id}_${id}_${room_name}` 的形式 (js伪代码)
 	r.GET("/ws/:wsroom", func(c *gin.Context) {
-		wsroom := c.Param("roomid")
+		wsroom := c.Param("wsroom")
 		controllers.WsController(c, wsroom)
 		return
 	})
