@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/March-mitsuki/satla-backend/utils/logger"
@@ -111,6 +112,30 @@ func (m *message) handleAddAutoSub() error {
 	return nil
 }
 
+func (m *message) handlePlayStart(ctx context.Context) error {
+	var wsData c2sPlayStart
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		logger.Err(fmt.Sprintf("unmarshal wsData === \n %v \n ===", unmarshalErr))
+		return unmarshalErr
+	}
+	var autoSubs []model.AutoSub
+	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
+	if result.Error != nil {
+		logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", result.Error))
+		broadcastAutoPlayErr(m, "start err")
+		return result.Error
+	}
+	go autoPlayStart(m, ctx, autoSubs)
+	return nil
+}
+
+func (m *message) handlePlayEnd(endPlay context.CancelFunc) error {
+	endPlay()
+	return nil
+}
+
+// return a s2cAutoChangeSub struct
 func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 	data := s2cAutoChangeSub{
 		Head: struct {
@@ -127,55 +152,73 @@ func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 	return data
 }
 
-func AutoPlayStart(m message) {
+// main logic of auto play
+func autoPlayStart(m *message, ctx context.Context, autoSubs []model.AutoSub) {
+	defer func() {
+		logger.Info("Auto Play Finish")
+	}()
 	logger.Info("auto play start")
-	var wsData c2sPlayStart
-	unmarshalErr := json.Unmarshal(m.data, &wsData)
-	if unmarshalErr != nil {
-		logger.Err(fmt.Sprintf("unmarshal wsData ERROR === \n %v \n ===", unmarshalErr))
-		return
-	}
-	var autoSubs []model.AutoSub
-	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
-	if result.Error != nil {
-		logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
-		return
-	}
 	for _, v := range autoSubs {
 		_data := makeAutoChangeSub(v)
 		data, marshalErr := json.Marshal(&_data)
 		if marshalErr != nil {
-			logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
+			logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+			broadcastAutoPlayErr(m, "loop marshal error")
 			return
 		}
-		(&m).data = data
+		m.data = data
 		d, dErr := time.ParseDuration(fmt.Sprintf("%vs", v.Duration))
 		if dErr != nil {
-			logger.Err(fmt.Sprintf("[auto] ERROR === \n %v \n ===", result.Error))
+			logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", dErr))
+			broadcastAutoPlayErr(m, "loop parse duration error")
 			return
 		}
-		WsHub.broadcast <- m
-		time.Sleep(d)
+		WsHub.broadcast <- *m
+		var wg sync.WaitGroup
+		timer := time.NewTimer(d)
+		wg.Add(1)
+		go cancelableSleep(ctx, timer, &wg)
+		wg.Wait()
 	}
 	return
 }
 
-func cancelableSleep() {
-	ctx, cancel := context.WithCancel(context.Background())
+func cancelableSleep(ctx context.Context, t *time.Timer, wg *sync.WaitGroup) {
 	defer func() {
-		fmt.Println("sleep done")
-		cancel()
-		return
+		wg.Done()
+		logger.Info("Sleep done")
 	}()
-	go func() {
-		t := time.Now()
+LOOP:
+	for {
 		select {
 		case <-ctx.Done():
-		case <-time.After(2 * time.Second):
+			break LOOP
+		case <-t.C:
+			break LOOP
 		}
-		fmt.Printf("here after: %v\n", time.Since(t))
-	}()
-	cancel()
-	time.Sleep(3 * time.Second)
-	fmt.Println("done")
+	}
+	return
+}
+
+func broadcastAutoPlayErr(m *message, reason string) *message {
+	_data := s2cAutoPlayErr{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoPlayErr,
+		},
+		Body: struct {
+			Msg string "json:\"msg\""
+		}{
+			Msg: reason,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err(fmt.Sprintf("make auto play err: %v \n", marshalErr))
+		return nil
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+	return m
 }

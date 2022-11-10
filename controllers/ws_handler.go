@@ -1,46 +1,9 @@
 package controllers
 
 import (
-	"errors"
-
 	"github.com/March-mitsuki/satla-backend/controllers/db"
 	"github.com/March-mitsuki/satla-backend/model"
 )
-
-func (rUser *roomUsers) addUser(wsroom, uname string) {
-	// 如果存在该房间则直接追加new user, 若不存在则创建一个新房间并追加
-	_, ok := (*rUser)[wsroom]
-	if !ok {
-		(*rUser)[wsroom] = []string{uname}
-		return
-	}
-	(*rUser)[wsroom] = append((*rUser)[wsroom], uname)
-	return
-}
-
-func (rUser *roomUsers) delUser(wsroom, uname string) error {
-	// 删除指定room内的指定user, 若删除后房间内不存在user, 则会连房间一起删除
-	// 若不存在该房间或传入用户名为空值则返回一个error
-	if uname == "" {
-		return errors.New("user name is empty")
-	}
-	_, ok := (*rUser)[wsroom]
-	if !ok {
-		return errors.New("no such room")
-	} else {
-		for idx, v := range (*rUser)[wsroom] {
-			if v == uname {
-				// 如果房间内不存在该用户则不会触发删除逻辑, 函数遍历后返回nil
-				(*rUser)[wsroom] = append((*rUser)[wsroom][:idx], (*rUser)[wsroom][idx+1:]...)
-				break
-			}
-		}
-		if length := len((*rUser)[wsroom]); length == 0 {
-			delete(*rUser, wsroom)
-		}
-		return nil
-	}
-}
 
 func (m *message) handleAddUser() (string, error) {
 	// 除了更改m中data的内容,并返回error之外

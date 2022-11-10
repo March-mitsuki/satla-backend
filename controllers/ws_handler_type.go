@@ -1,5 +1,7 @@
 package controllers
 
+import "context"
+
 type roomUsers map[string][]string
 
 type SubtitleFromClient struct {
@@ -15,6 +17,13 @@ type SubtitleFromClient struct {
 	Subtitle     string      `json:"subtitle"`
 	Origin       string      `json:"origin"`
 }
+
+type autoCtxData struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	listId uint
+}
+type autoCtxs map[string][]autoCtxData
 
 // c2s -> client to server
 // s2c -> server to client
@@ -41,6 +50,7 @@ const (
 	c2sCmdGetAutoLists string = "getRoomAutoLists"
 	c2sCmdAddAutoSub   string = "addAutoSub"
 	c2sCmdPlayStart    string = "playStart"
+	c2sCmdPlayEnd      string = "playEnd"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
