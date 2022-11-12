@@ -187,3 +187,12 @@ type s2cAutoPreviewChange struct {
 		NextTwo   model.AutoSub `json:"next_two"`
 	} `json:"body"`
 }
+
+type s2cAutoPlayEnd struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Data interface{} `json:"data"`
+	} `json:"body"`
+}

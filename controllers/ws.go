@@ -243,20 +243,20 @@ func (s subscription) readPump() {
 
 		case c2sCmdPlayStart:
 			logger.Nomal("ws", "c2s Cmd Play Start")
+
 			autoCtx, endPlay := context.WithCancel(context.Background())
 			listId := json.Get(msg, "body", "list_id").ToUint()
 			ope := make(chan autoOpeData)
 			ctxData := autoCtxData{autoCtx, endPlay, listId, ope}
 			allAutoCtxs.addCtx(s.room, ctxData)
+
 			err := m.handlePlayStart(autoCtx, ope)
-			// 若正常则什么都不回复, 若不正常则brodcast一个错误
 			if err != nil {
 				logger.Err("ws", fmt.Sprintf("auto play start err %v \n", err))
 				return
 			}
 
 		case c2sCmdPlayEnd:
-			// play end不会返回给客户端任何东西
 			logger.Nomal("ws", "c2s Cmd Play End")
 			listId := json.Get(msg, "body", "list_id").ToUint()
 			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
@@ -264,12 +264,7 @@ func (s subscription) readPump() {
 				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
 				return
 			}
-			err := m.handlePlayEnd(currentCtx.cancel)
-			if err != nil {
-				logger.Err("ws", fmt.Sprintf("auto play end err %v \n", err))
-				return
-			}
-			allAutoCtxs.delCtx(s.room, listId)
+			currentCtx.cancel()
 
 		case c2sCmdPlayForward:
 			logger.Nomal("ws", "c2s Cmd Play Forward")

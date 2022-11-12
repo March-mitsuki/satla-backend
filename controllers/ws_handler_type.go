@@ -100,5 +100,6 @@ const (
 	s2cCmdAutoPlayErr       s2cCmds = "autoPlayErr"
 	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
 	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
+	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

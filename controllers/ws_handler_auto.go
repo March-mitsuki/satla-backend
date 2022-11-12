@@ -130,11 +130,6 @@ func (m *message) handlePlayStart(ctx context.Context, ope chan autoOpeData) err
 	return nil
 }
 
-func (m *message) handlePlayEnd(endPlay context.CancelFunc) error {
-	endPlay()
-	return nil
-}
-
 // return a s2cAutoChangeSub struct
 func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 	data := s2cAutoChangeSub{
@@ -266,8 +261,10 @@ func autoPlayLoop(
 ) {
 	logger.Info("autoPlay", "auto play loop called")
 	if ca.adder(0) >= len(*autoSubs)-1 {
+		// 结束有两个逻辑, 一个是这里的自动结束, 还有一个在cancelableSleep的ctx.Done()里
 		go broadcastSendBlank(m)
 		go broadcastPreviewEnd(m)
+		go broadcastAutoPlayEnd(m)
 		allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
 		return
 	}
@@ -437,6 +434,8 @@ LOOP:
 			t.Stop()
 			go broadcastSendBlank(m)
 			go broadcastPreviewEnd(m)
+			go broadcastAutoPlayEnd(m)
+			allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
 			break LOOP
 		case o := <-ope:
 			switch o.opeType {
@@ -526,7 +525,30 @@ func broadcastPreviewEnd(m *message) {
 	return
 }
 
-func broadcastAutoPlayErr(m *message, reason string) *message {
+func broadcastAutoPlayEnd(m *message) {
+	_data := s2cAutoPlayEnd{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoPlayEnd,
+		},
+		Body: struct {
+			Data interface{} "json:\"data\""
+		}{
+			Data: "",
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("broadcast auto play end: %v \n", marshalErr))
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+	return
+}
+
+func broadcastAutoPlayErr(m *message, reason string) {
 	_data := s2cAutoPlayErr{
 		Head: struct {
 			Cmd s2cCmds "json:\"cmd\""
@@ -541,10 +563,10 @@ func broadcastAutoPlayErr(m *message, reason string) *message {
 	}
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
-		logger.Err("autoPlay", fmt.Sprintf("make auto play err: %v \n", marshalErr))
-		return nil
+		logger.Err("autoPlay", fmt.Sprintf("broadcast auto play err: %v \n", marshalErr))
+		return
 	}
 	m.data = data
 	WsHub.broadcast <- *m
-	return m
+	return
 }
