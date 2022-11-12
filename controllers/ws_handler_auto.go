@@ -240,14 +240,15 @@ func autoPlayStart(
 ) {
 	logger.Info("autoPlay", "auto play whiout loop start")
 	ca := calc()
-	sub := (*autoSubs)[0]
-	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", sub.Duration))
+	subtitle := (*autoSubs)[0]
+	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", subtitle.Duration))
 	if dErr != nil {
 		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
 		broadcastAutoPlayErr(m, "loop start parse duration error")
 		return
 	}
-	broadcastAutoChangeSub(m, &sub)
+	broadcastAutoChangeSub(m, &subtitle)
+	broadcastAutoPreviewChange(m, autoSubs, 0)
 	timer := time.NewTimer(d)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -265,17 +266,20 @@ func autoPlayLoop(
 ) {
 	logger.Info("autoPlay", "auto play loop called")
 	if ca.adder(0) >= len(*autoSubs)-1 {
-		autoSendBlank(m)
+		go broadcastSendBlank(m)
+		go broadcastPreviewEnd(m)
+		allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
 		return
 	}
-	sub := (*autoSubs)[ca.adder(1)]
-	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", sub.Duration))
+	subtitle := (*autoSubs)[ca.adder(1)]
+	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", subtitle.Duration))
 	if dErr != nil {
 		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
 		broadcastAutoPlayErr(m, "loop parse duration error")
 		return
 	}
-	broadcastAutoChangeSub(m, &sub)
+	broadcastAutoChangeSub(m, &subtitle)
+	broadcastAutoPreviewChange(m, autoSubs, ca.adder(0))
 	timer := time.NewTimer(d)
 	wg.Add(1)
 	cancelableSleep(ctx, timer, wg, ca, m, autoSubs, ope)
@@ -284,6 +288,125 @@ func autoPlayLoop(
 
 func broadcastAutoChangeSub(m *message, sub *model.AutoSub) {
 	_data := makeAutoChangeSub(*sub)
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+		broadcastAutoPlayErr(m, "loop marshal error")
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+}
+
+func broadcastAutoPreviewChange(m *message, autoSubs *[]model.AutoSub, nowNum int) {
+	var _data s2cAutoPreviewChange
+	if nowNum-1 < 0 {
+		_data = s2cAutoPreviewChange{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdAutoPreviewChange,
+			},
+			Body: struct {
+				BehindTwo model.AutoSub "json:\"behind_two\""
+				Behind    model.AutoSub "json:\"behind\""
+				Main      model.AutoSub "json:\"main\""
+				Next      model.AutoSub "json:\"next\""
+				NextTwo   model.AutoSub "json:\"next_two\""
+			}{
+				BehindTwo: model.AutoSub{},
+				Behind:    model.AutoSub{},
+				Main:      (*autoSubs)[nowNum],
+				Next:      (*autoSubs)[nowNum+1],
+				NextTwo:   (*autoSubs)[nowNum+2],
+			},
+		}
+	} else if nowNum-2 < 0 {
+		_data = s2cAutoPreviewChange{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdAutoPreviewChange,
+			},
+			Body: struct {
+				BehindTwo model.AutoSub "json:\"behind_two\""
+				Behind    model.AutoSub "json:\"behind\""
+				Main      model.AutoSub "json:\"main\""
+				Next      model.AutoSub "json:\"next\""
+				NextTwo   model.AutoSub "json:\"next_two\""
+			}{
+				BehindTwo: model.AutoSub{},
+				Behind:    (*autoSubs)[nowNum-1],
+				Main:      (*autoSubs)[nowNum],
+				Next:      (*autoSubs)[nowNum+1],
+				NextTwo:   (*autoSubs)[nowNum+2],
+			},
+		}
+	} else if nowNum+1 > len(*autoSubs)-1 {
+		_data = s2cAutoPreviewChange{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdAutoPreviewChange,
+			},
+			Body: struct {
+				BehindTwo model.AutoSub "json:\"behind_two\""
+				Behind    model.AutoSub "json:\"behind\""
+				Main      model.AutoSub "json:\"main\""
+				Next      model.AutoSub "json:\"next\""
+				NextTwo   model.AutoSub "json:\"next_two\""
+			}{
+				BehindTwo: (*autoSubs)[nowNum-2],
+				Behind:    (*autoSubs)[nowNum-1],
+				Main:      (*autoSubs)[nowNum],
+				Next:      model.AutoSub{},
+				NextTwo:   model.AutoSub{},
+			},
+		}
+	} else if nowNum+2 > len(*autoSubs)-1 {
+		_data = s2cAutoPreviewChange{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdAutoPreviewChange,
+			},
+			Body: struct {
+				BehindTwo model.AutoSub "json:\"behind_two\""
+				Behind    model.AutoSub "json:\"behind\""
+				Main      model.AutoSub "json:\"main\""
+				Next      model.AutoSub "json:\"next\""
+				NextTwo   model.AutoSub "json:\"next_two\""
+			}{
+				BehindTwo: (*autoSubs)[nowNum-2],
+				Behind:    (*autoSubs)[nowNum-1],
+				Main:      (*autoSubs)[nowNum],
+				Next:      (*autoSubs)[nowNum+1],
+				NextTwo:   model.AutoSub{},
+			},
+		}
+	} else {
+		_data = s2cAutoPreviewChange{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdAutoPreviewChange,
+			},
+			Body: struct {
+				BehindTwo model.AutoSub "json:\"behind_two\""
+				Behind    model.AutoSub "json:\"behind\""
+				Main      model.AutoSub "json:\"main\""
+				Next      model.AutoSub "json:\"next\""
+				NextTwo   model.AutoSub "json:\"next_two\""
+			}{
+				BehindTwo: (*autoSubs)[nowNum-2],
+				Behind:    (*autoSubs)[nowNum-1],
+				Main:      (*autoSubs)[nowNum],
+				Next:      (*autoSubs)[nowNum+1],
+				NextTwo:   (*autoSubs)[nowNum+2],
+			},
+		}
+	}
+
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
@@ -312,7 +435,8 @@ LOOP:
 		select {
 		case <-ctx.Done():
 			t.Stop()
-			go autoSendBlank(m)
+			go broadcastSendBlank(m)
+			go broadcastPreviewEnd(m)
 			break LOOP
 		case o := <-ope:
 			switch o.opeType {
@@ -356,7 +480,7 @@ LOOP:
 	return
 }
 
-func autoSendBlank(m *message) {
+func broadcastSendBlank(m *message) {
 	_lastSend := makeAutoChangeSub(model.AutoSub{})
 	data, marshalErr := json.Marshal(&_lastSend)
 	if marshalErr != nil {
@@ -367,6 +491,38 @@ func autoSendBlank(m *message) {
 	m.data = data
 	WsHub.broadcast <- *m
 	logger.Info("autoPlay", "last send")
+	return
+}
+
+func broadcastPreviewEnd(m *message) {
+	_data := s2cAutoPreviewChange{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoPreviewChange,
+		},
+		Body: struct {
+			BehindTwo model.AutoSub "json:\"behind_two\""
+			Behind    model.AutoSub "json:\"behind\""
+			Main      model.AutoSub "json:\"main\""
+			Next      model.AutoSub "json:\"next\""
+			NextTwo   model.AutoSub "json:\"next_two\""
+		}{
+			BehindTwo: model.AutoSub{},
+			Behind:    model.AutoSub{},
+			Main:      model.AutoSub{Origin: "播放结束", Subtitle: "播放结束"},
+			Next:      model.AutoSub{},
+			NextTwo:   model.AutoSub{},
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+		broadcastAutoPlayErr(m, "loop marshal error")
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
 	return
 }
 

@@ -95,9 +95,10 @@ const (
 	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
 )
 const (
-	s2cCmdGetAutoLists  s2cCmds = "sGetRoomAutoLists"
-	s2cCmdAddAutoSub    s2cCmds = "sAddAutoSub"
-	s2cCmdAutoPlayErr   s2cCmds = "autoPlayErr"
-	s2cCmdAutoChangeSub s2cCmds = "autoChangeSub"
+	s2cCmdGetAutoLists      s2cCmds = "sGetRoomAutoLists"
+	s2cCmdAddAutoSub        s2cCmds = "sAddAutoSub"
+	s2cCmdAutoPlayErr       s2cCmds = "autoPlayErr"
+	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
+	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

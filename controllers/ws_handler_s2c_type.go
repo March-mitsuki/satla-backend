@@ -174,3 +174,16 @@ type s2cHeartBeat struct {
 		Data interface{} `json:"data"`
 	} `json:"body"`
 }
+
+type s2cAutoPreviewChange struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		BehindTwo model.AutoSub `json:"behind_two"`
+		Behind    model.AutoSub `json:"behind"`
+		Main      model.AutoSub `json:"main"`
+		Next      model.AutoSub `json:"next"`
+		NextTwo   model.AutoSub `json:"next_two"`
+	} `json:"body"`
+}
