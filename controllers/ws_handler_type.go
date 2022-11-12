@@ -71,6 +71,7 @@ const (
 	c2sCmdPlayRewindTwice  string = "playRewindTwice"
 	c2sCmdPlayPause        string = "playPause"
 	c2sCmdPlayRestart      string = "playRestart"
+	c2sCmdPlaySendBlank    string = "playSendBlank"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 

@@ -338,6 +338,10 @@ func (s subscription) readPump() {
 				opeType: restart,
 			}
 
+		case c2sCmdPlaySendBlank:
+			logger.Nomal("ws", "c2s Cmd Play Send Space")
+			broadcastSendBlank(&m)
+
 		case c2sCmdHeartBeat:
 			logger.Info(
 				"ws",
