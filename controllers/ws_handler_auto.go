@@ -570,3 +570,50 @@ func broadcastAutoPlayErr(m *message, reason string) {
 	WsHub.broadcast <- *m
 	return
 }
+
+func (m *message) handleDeleteAutoSub() error {
+	var wsData c2sDeleteAutoSub
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	dbErr := db.DeleteAutoSub(wsData.Body.ListId)
+	var _data s2cDeleteAutoSub
+	if dbErr != nil {
+		_data = s2cDeleteAutoSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdDeleteAutoSub,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+				ListId uint "json:\"list_id\""
+			}{
+				Status: false,
+				ListId: wsData.Body.ListId,
+			},
+		}
+	} else {
+		_data = s2cDeleteAutoSub{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdDeleteAutoSub,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+				ListId uint "json:\"list_id\""
+			}{
+				Status: true,
+				ListId: wsData.Body.ListId,
+			},
+		}
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}

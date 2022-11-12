@@ -448,3 +448,21 @@ func AddAutoSub(arg ArgAddAutoSub) (model.AutoList, error) {
 	}
 	return autoList, nil
 }
+
+func DeleteAutoSub(listId uint) error {
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		delSubResult := tx.Where("list_id = ?", listId).Delete(&model.AutoSub{})
+		if delSubResult.Error != nil {
+			return delSubResult.Error
+		}
+		delListResult := tx.Delete(&model.AutoList{}, listId)
+		if delListResult.Error != nil {
+			return delListResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}

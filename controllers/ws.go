@@ -342,6 +342,15 @@ func (s subscription) readPump() {
 			logger.Nomal("ws", "c2s Cmd Play Send Space")
 			broadcastSendBlank(&m)
 
+		case c2sCmdDeleteAutoSub:
+			logger.Nomal("ws", "c2s Cmd Delete Auto Sub")
+			err := m.handleDeleteAutoSub()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("delete auto sub: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
 		case c2sCmdHeartBeat:
 			logger.Info(
 				"ws",

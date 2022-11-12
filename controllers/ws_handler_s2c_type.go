@@ -166,15 +166,6 @@ type s2cAutoChangeSub struct {
 	} `json:"body"`
 }
 
-type s2cHeartBeat struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Data interface{} `json:"data"`
-	} `json:"body"`
-}
-
 type s2cAutoPreviewChange struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
@@ -189,6 +180,25 @@ type s2cAutoPreviewChange struct {
 }
 
 type s2cAutoPlayEnd struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Data interface{} `json:"data"`
+	} `json:"body"`
+}
+
+type s2cDeleteAutoSub struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status bool `json:"status"`
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
+type s2cHeartBeat struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`

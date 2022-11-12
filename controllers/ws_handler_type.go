@@ -72,6 +72,7 @@ const (
 	c2sCmdPlayPause        string = "playPause"
 	c2sCmdPlayRestart      string = "playRestart"
 	c2sCmdPlaySendBlank    string = "playSendBlank"
+	c2sCmdDeleteAutoSub    string = "deleteAutoSub"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -102,5 +103,6 @@ const (
 	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
 	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
 	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
+	s2cCmdDeleteAutoSub     s2cCmds = "sDeleteAutoSub"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

@@ -139,6 +139,13 @@ type c2sPlayStart struct {
 	} `json:"body"`
 }
 
+type c2sDeleteAutoSub struct {
+	c2sHead
+	Body struct {
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {
