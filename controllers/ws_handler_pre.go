@@ -70,6 +70,7 @@ func (ctx autoCtxs) delCtx(wsroom string, listId uint) error {
 	}
 	for idx, v := range roomCtx {
 		if v.listId == listId {
+			close(ctx[wsroom][idx].opeChan)
 			ctx[wsroom] = append(ctx[wsroom][:idx], ctx[wsroom][idx+1:]...)
 			break
 		}

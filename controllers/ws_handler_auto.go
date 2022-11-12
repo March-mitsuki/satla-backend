@@ -112,21 +112,21 @@ func (m *message) handleAddAutoSub() error {
 	return nil
 }
 
-func (m *message) handlePlayStart(ctx context.Context) error {
+func (m *message) handlePlayStart(ctx context.Context, ope chan autoOpeData) error {
 	var wsData c2sPlayStart
 	unmarshalErr := json.Unmarshal(m.data, &wsData)
 	if unmarshalErr != nil {
-		logger.Err(fmt.Sprintf("unmarshal wsData === \n %v \n ===", unmarshalErr))
+		logger.Err("wsHandler", fmt.Sprintf("unmarshal wsData === \n %v \n ===", unmarshalErr))
 		return unmarshalErr
 	}
 	var autoSubs []model.AutoSub
 	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
 	if result.Error != nil {
-		logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", result.Error))
+		logger.Err("wsHandler", fmt.Sprintf("[auto] === \n %v \n ===", result.Error))
 		broadcastAutoPlayErr(m, "start err")
 		return result.Error
 	}
-	go autoPlayStart(m, ctx, autoSubs)
+	go autoPlayStart(ctx, m, &autoSubs, ope)
 	return nil
 }
 
@@ -153,23 +153,34 @@ func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 }
 
 // main logic of auto play
-func autoPlayStart(m *message, ctx context.Context, autoSubs []model.AutoSub) {
+func autoPlayStartOld(m *message, ctx context.Context, autoSubs []model.AutoSub) {
 	defer func() {
-		logger.Info("Auto Play Finish")
+		// 结束播放时保证最后一次发送一定是空行
+		_lastSend := makeAutoChangeSub(model.AutoSub{})
+		data, marshalErr := json.Marshal(&_lastSend)
+		if marshalErr != nil {
+			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+			broadcastAutoPlayErr(m, "loop marshal error")
+			return
+		}
+		m.data = data
+		WsHub.broadcast <- *m
+		logger.Info("autoPlayOld", "Auto Play Finish")
 	}()
-	logger.Info("auto play start")
+
+	logger.Info("autoPlayOld", "auto play start")
 	for _, v := range autoSubs {
 		_data := makeAutoChangeSub(v)
 		data, marshalErr := json.Marshal(&_data)
 		if marshalErr != nil {
-			logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
 			broadcastAutoPlayErr(m, "loop marshal error")
 			return
 		}
 		m.data = data
 		d, dErr := time.ParseDuration(fmt.Sprintf("%vs", v.Duration))
 		if dErr != nil {
-			logger.Err(fmt.Sprintf("[auto] === \n %v \n ===", dErr))
+			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
 			broadcastAutoPlayErr(m, "loop parse duration error")
 			return
 		}
@@ -177,16 +188,16 @@ func autoPlayStart(m *message, ctx context.Context, autoSubs []model.AutoSub) {
 		var wg sync.WaitGroup
 		timer := time.NewTimer(d)
 		wg.Add(1)
-		go cancelableSleep(ctx, timer, &wg)
+		go cancelableSleepOld(ctx, timer, &wg)
 		wg.Wait()
 	}
 	return
 }
 
-func cancelableSleep(ctx context.Context, t *time.Timer, wg *sync.WaitGroup) {
+func cancelableSleepOld(ctx context.Context, t *time.Timer, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
-		logger.Info("Sleep done")
+		logger.Info("autoPlayOld", "Sleep done")
 	}()
 LOOP:
 	for {
@@ -197,6 +208,165 @@ LOOP:
 			break LOOP
 		}
 	}
+	return
+}
+
+func calc() calcData {
+	num := 0
+	sum := func(i int) int {
+		num += i
+		return num
+	}
+	sub := func(i int) int {
+		num -= i
+		return num
+	}
+	return calcData{
+		adder: sum,
+		suber: sub,
+	}
+}
+
+type calcData struct {
+	adder func(int) int
+	suber func(int) int
+}
+
+func autoPlayStart(
+	ctx context.Context,
+	m *message,
+	autoSubs *[]model.AutoSub,
+	ope chan autoOpeData,
+) {
+	logger.Info("autoPlay", "auto play whiout loop start")
+	ca := calc()
+	sub := (*autoSubs)[0]
+	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", sub.Duration))
+	if dErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
+		broadcastAutoPlayErr(m, "loop start parse duration error")
+		return
+	}
+	broadcastAutoChangeSub(m, &sub)
+	timer := time.NewTimer(d)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	cancelableSleep(ctx, timer, &wg, ca, m, autoSubs, ope)
+	wg.Wait()
+}
+
+func autoPlayLoop(
+	ctx context.Context,
+	ca calcData,
+	m *message,
+	autoSubs *[]model.AutoSub,
+	wg *sync.WaitGroup,
+	ope chan autoOpeData,
+) {
+	logger.Info("autoPlay", "auto play loop called")
+	if ca.adder(0) >= len(*autoSubs)-1 {
+		autoSendBlank(m)
+		return
+	}
+	sub := (*autoSubs)[ca.adder(1)]
+	d, dErr := time.ParseDuration(fmt.Sprintf("%vs", sub.Duration))
+	if dErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
+		broadcastAutoPlayErr(m, "loop parse duration error")
+		return
+	}
+	broadcastAutoChangeSub(m, &sub)
+	timer := time.NewTimer(d)
+	wg.Add(1)
+	cancelableSleep(ctx, timer, wg, ca, m, autoSubs, ope)
+	wg.Wait()
+}
+
+func broadcastAutoChangeSub(m *message, sub *model.AutoSub) {
+	_data := makeAutoChangeSub(*sub)
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+		broadcastAutoPlayErr(m, "loop marshal error")
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+}
+
+func cancelableSleep(
+	ctx context.Context,
+	t *time.Timer,
+	wg *sync.WaitGroup,
+	ca calcData,
+	m *message,
+	autoSubs *[]model.AutoSub,
+	ope chan autoOpeData,
+) {
+	defer func() {
+		wg.Done()
+		logger.Info("autoPlay", "loop sleep done")
+	}()
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			go autoSendBlank(m)
+			break LOOP
+		case o := <-ope:
+			switch o.opeType {
+			case foward:
+				t.Stop()
+				go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+
+			case fowardTwice:
+				t.Stop()
+				ca.adder(1)
+				go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+
+			case rewind:
+				t.Stop()
+				ca.suber(2)
+				go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+
+			case rewindTwice:
+				t.Stop()
+				ca.suber(3)
+				go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+
+			case pause:
+				logger.Info("sleep", "pause now")
+				t.Stop()
+				for {
+					o := <-ope
+					if o.opeType == restart {
+						go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+						break
+					}
+				}
+			}
+			logger.Info("sleep", "case done")
+			break LOOP
+		case <-t.C:
+			go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+			break LOOP
+		}
+	}
+	return
+}
+
+func autoSendBlank(m *message) {
+	_lastSend := makeAutoChangeSub(model.AutoSub{})
+	data, marshalErr := json.Marshal(&_lastSend)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
+		broadcastAutoPlayErr(m, "loop marshal error")
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+	logger.Info("autoPlay", "last send")
 	return
 }
 
@@ -215,7 +385,7 @@ func broadcastAutoPlayErr(m *message, reason string) *message {
 	}
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
-		logger.Err(fmt.Sprintf("make auto play err: %v \n", marshalErr))
+		logger.Err("autoPlay", fmt.Sprintf("make auto play err: %v \n", marshalErr))
 		return nil
 	}
 	m.data = data

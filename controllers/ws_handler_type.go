@@ -19,11 +19,25 @@ type SubtitleFromClient struct {
 }
 
 type autoCtxData struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	listId uint
+	ctx     context.Context
+	cancel  context.CancelFunc
+	listId  uint
+	opeChan chan autoOpeData
 }
 type autoCtxs map[string][]autoCtxData
+type autoOpeData struct {
+	opeType opeCmd
+}
+type opeCmd uint
+
+const (
+	foward opeCmd = iota
+	fowardTwice
+	rewind
+	rewindTwice
+	pause
+	restart
+)
 
 // c2s -> client to server
 // s2c -> server to client
@@ -47,10 +61,16 @@ const (
 	c2sCmdChangeReversed     string = "changeReversed"
 )
 const (
-	c2sCmdGetAutoLists string = "getRoomAutoLists"
-	c2sCmdAddAutoSub   string = "addAutoSub"
-	c2sCmdPlayStart    string = "playStart"
-	c2sCmdPlayEnd      string = "playEnd"
+	c2sCmdGetAutoLists     string = "getRoomAutoLists"
+	c2sCmdAddAutoSub       string = "addAutoSub"
+	c2sCmdPlayStart        string = "playStart"
+	c2sCmdPlayEnd          string = "playEnd"
+	c2sCmdPlayForward      string = "playForward"
+	c2sCmdPlayForwardTwice string = "playForwardTwice"
+	c2sCmdPlayRewind       string = "playRewind"
+	c2sCmdPlayRewindTwice  string = "playRewindTwice"
+	c2sCmdPlayPause        string = "playPause"
+	c2sCmdPlayRestart      string = "playRestart"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
