@@ -138,7 +138,7 @@ func main() {
 		c.File("./dist")
 		return
 	})
-	// 设置不需要进行login check的
+	// 设置不需要进行login check的api
 	r.GET("/display/*roomid", directAccess)
 	r.GET("/login", directAccess)
 	r.GET("/signup", directAccess)
@@ -147,6 +147,7 @@ func main() {
 		return
 	})
 
+	// 测试服务器是否正常运行
 	r.GET("/test", func(c *gin.Context) {
 		type testMsg struct {
 			Code int    `json:"code"`
@@ -158,9 +159,12 @@ func main() {
 		}
 		c.JSON(200, res)
 	})
-	r.GET("/ws/:roomid", func(c *gin.Context) {
-		roomid := c.Param("roomid")
-		controllers.WsController(c, roomid)
+
+	// 为了保证房间名字unique, wsroom 为 RoomList model中的
+	// `${project_id}_${id}_${room_name}` 的形式 (js伪代码)
+	r.GET("/ws/:wsroom", func(c *gin.Context) {
+		wsroom := c.Param("wsroom")
+		controllers.WsController(c, wsroom)
 		return
 	})
 
@@ -175,6 +179,7 @@ func main() {
 	}
 	api.GET("/crrent_userinfo", controllers.GetCurrentUserInfo)
 	api.GET("/all_projects", controllers.GetAllProjects)
+	api.GET("/project_detail/:id", controllers.GetProjectDetail)
 	api.POST("/change_pass", controllers.ChangeUserPassword)
 
 	// sub route adminApi, url -> /api/admin
@@ -184,6 +189,7 @@ func main() {
 	}
 	adminApi.POST("/new_user", controllers.CreateNewUser)
 	adminApi.POST("/new_project", controllers.CreateNewProject)
+	adminApi.POST("/new_room", controllers.CreateNewRoom)
 
 	// url -> /admin, 访问后台页面时的检测
 	admin := r.Group("/admin")

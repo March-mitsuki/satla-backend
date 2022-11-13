@@ -13,7 +13,7 @@ import (
 func TestCreate(t *testing.T) {
 	subtitle := model.Subtitle{
 		InputTime:    "93:67:88",
-		ProjectId:    1,
+		RoomId:       1,
 		TranslatedBy: "SanYue",
 		Subtitle:     "test insert!@#$%^&*#@(!)",
 	}
@@ -43,7 +43,7 @@ func TestCreateSubtitleUp(t *testing.T) {
 			&model.SubtitleOrder{},
 		).Where(
 			"project_id = ?",
-			arg.ProjectId,
+			arg.RoomId,
 		).Update(
 			"order",
 			gorm.Expr(

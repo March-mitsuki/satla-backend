@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/March-mitsuki/satla-backend/utils/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -24,6 +27,7 @@ var upgrader = websocket.Upgrader{
 }
 
 var allRoomUsers roomUsers = make(roomUsers, 0)
+var allAutoCtxs autoCtxs = make(autoCtxs, 0)
 
 func (s subscription) readPump() {
 	c := s.conn
@@ -32,6 +36,7 @@ func (s subscription) readPump() {
 		err := allRoomUsers.delUser(s.room, cUname)
 		if err != nil {
 			// 如果发生错误则直接关闭连接并返回
+			WsHub.unregister <- s
 			c.ws.Close()
 			fmt.Println("ws close by read pump err close")
 			return
@@ -65,6 +70,7 @@ func (s subscription) readPump() {
 	for {
 		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
+			logger.Err("ws", fmt.Sprintf("ws read msg err: %v /n", err))
 			return
 		}
 		m := message{msg, s.room, s.conn}
@@ -72,154 +78,314 @@ func (s subscription) readPump() {
 		// switch根据发过来的cmd不同进行不同的处理
 		switch cmd {
 		case c2sCmdAddSubtitleUp:
-			fmt.Println("--- c2s: Cmd Add Subtitle Up ---")
-
+			logger.Nomal("ws", "c2s: Cmd Add Subtitle Up")
 			err := m.handleAddSubtitleUp()
 			if err != nil {
-				fmt.Printf("add subtitle up err: %v \n", err)
+				logger.Err("ws", fmt.Sprintf("add subtitle up err: %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdAddSubtitleDown:
-			fmt.Println("--- c2s: Cmd Add Subtitle Down ---")
 
+		case c2sCmdAddSubtitleDown:
+			logger.Nomal("ws", "c2s: Cmd Add Subtitle Down")
 			err := m.handleAddSubtitleDown()
 			if err != nil {
-				fmt.Printf("add subtitle down err: %v \n", err)
+				logger.Err("ws", fmt.Sprintf("add subtitle down err: %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdChangeUser:
-			fmt.Println("--- c2s: Cmd Change User ---")
 
+		case c2sCmdChangeUser:
+			logger.Nomal("ws", "c2s: Cmd Change User")
 			_cUname, addUserErr := m.handleAddUser()
 			if addUserErr != nil {
-				fmt.Printf("add user err: %v \n", addUserErr)
+				logger.Err("ws", fmt.Sprintf("add user err: %v \n", addUserErr))
 				return
 			}
 			cUname = _cUname
 			WsHub.broadcast <- m
-		case c2sCmdGetRoomSubtitles:
-			fmt.Println("--- c2s: Cmd Get Room Subtitles ---")
 
+		case c2sCmdGetRoomSubtitles:
+			logger.Nomal("ws", "c2s: Cmd Get Room Subtitles")
 			err := m.handleGetRoomSubtitles()
 			if err != nil {
-				fmt.Printf("get all subtitles err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("get all subtitles err %v \n", err))
 				return
 			}
 			WsHub.castself <- m
-		case c2sCmdChangeSubtitle:
-			fmt.Println("--- c2s: Cmd Change Subtitle ---")
 
+		case c2sCmdChangeSubtitle:
+			logger.Nomal("ws", "c2s: Cmd Change Subtitle")
 			err := m.handleChangeSubtitle()
 			if err != nil {
-				fmt.Printf("change subtitles err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("change subtitles err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdEditStart:
-			fmt.Println("--- c2s: Cmd Edit Start ---")
 
+		case c2sCmdEditStart:
+			logger.Nomal("ws", "c2s: Cmd Edit Start")
 			err := m.handleEditStart()
 			if err != nil {
-				fmt.Printf("edit start err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("edit start err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdEditEnd:
-			fmt.Println("--- c2s: Cmd Edit End ---")
 
+		case c2sCmdEditEnd:
+			logger.Nomal("ws", "c2s: Cmd Edit End")
 			err := m.handleEditEnd()
 			if err != nil {
-				fmt.Printf("edit end err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("edit end err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdAddTranslatedSub:
-			fmt.Println("--- c2s: Cmd Add Translated Sub ---")
 
+		case c2sCmdAddTranslatedSub:
+			logger.Nomal("ws", "c2s: Cmd Add Translated Sub")
 			err := m.handleAddTranslatedSub()
 			if err != nil {
-				fmt.Printf("add translated sub err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("add translated sub err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdDeleteSubtitle:
-			fmt.Println("--- c2s: Cmd Delete Subtitle ---")
 
+		case c2sCmdDeleteSubtitle:
+			logger.Nomal("ws", "c2s: Cmd Delete Subtitle")
 			err := m.handleDeleteSubtitle()
 			if err != nil {
-				fmt.Printf("delete subtitle err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("delete subtitle err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdReorderSubFront:
-			fmt.Println("--- c2s: Cmd Reorder Sub Front ---")
 
+		case c2sCmdReorderSubFront:
+			logger.Nomal("ws", "c2s: Cmd Reorder Sub Front")
 			err := m.handleReorderSubFront()
 			if err != nil {
-				fmt.Printf("reorder sub front err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("reorder sub front err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdReorderSubBack:
-			fmt.Println("--- c2s: Cmd Reorder Sub Back ---")
 
+		case c2sCmdReorderSubBack:
+			logger.Nomal("ws", "c2s: Cmd Reorder Sub Back")
 			err := m.handleReorderSubBack()
 			if err != nil {
-				fmt.Printf("reorder sub back err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("reorder sub back err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdSendSubtitle:
-			fmt.Println("--- c2s: Cmd Send Subtitle ---")
 
+		case c2sCmdSendSubtitle:
+			logger.Nomal("ws", "c2s: Cmd Send Subtitle")
 			err := m.handleSendSubtitle()
 			if err != nil {
-				fmt.Printf("send subtitle err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("send subtitle err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdSendSubtitleDirect:
-			fmt.Println("--- c2s: Cmd Send Subtitle Direct ---")
 
+		case c2sCmdSendSubtitleDirect:
+			logger.Nomal("ws", "c2s: Cmd Send Subtitle Direct")
 			err := m.handleSendSubtitleDirect()
 			if err != nil {
-				fmt.Printf("send subtitle directly err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("send subtitle directly err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdChangeStyle:
-			fmt.Println("--- c2s: Cmd Change Style ---")
 
+		case c2sCmdChangeStyle:
+			logger.Nomal("ws", "c2s: Cmd Change Style")
 			err := m.handleChangeStyle()
 			if err != nil {
-				fmt.Printf("change style err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("change style err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdChangeBilingual:
-			fmt.Println("--- c2s: Cmd Change Bilingual ---")
 
+		case c2sCmdChangeBilingual:
+			logger.Nomal("ws", "c2s: Cmd Change Bilingual")
 			err := m.handleChangeBilingual()
 			if err != nil {
-				fmt.Printf("change bilingual err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("change bilingual err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdChangeReversed:
-			fmt.Println("--- c2s: Cmd Change Reversed ---")
 
+		case c2sCmdChangeReversed:
+			logger.Nomal("ws", "c2s: Cmd Change Reversed")
 			err := m.handleChangeReversed()
 			if err != nil {
-				fmt.Printf("change reversed err %v \n", err)
+				logger.Err("ws", fmt.Sprintf("change reversed err %v \n", err))
 				return
 			}
 			WsHub.broadcast <- m
-		case c2sCmdHeartBeat:
+
+		case c2sCmdGetAutoLists:
+			// 从这里往下是auto page
+			logger.Nomal("ws", "c2s Cmd Get Auto Lists")
+			err := m.handleGetRoomAutoLists()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get auto lists err %v \n", err))
+				return
+			}
 			WsHub.castself <- m
+
+		case c2sCmdAddAutoSub:
+			logger.Nomal("ws", "c2s: Cmd Add Auto Sub")
+			err := m.handleAddAutoSub()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("add auto sub err %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
+		case c2sCmdPlayStart:
+			logger.Nomal("ws", "c2s Cmd Play Start")
+
+			autoCtx, endPlay := context.WithCancel(context.Background())
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			ope := make(chan autoOpeData)
+			ctxData := autoCtxData{autoCtx, endPlay, listId, ope}
+			allAutoCtxs.addCtx(s.room, ctxData)
+
+			err := m.handlePlayStart(autoCtx, ope)
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("auto play start err %v \n", err))
+				return
+			}
+
+		case c2sCmdPlayEnd:
+			logger.Nomal("ws", "c2s Cmd Play End")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.cancel()
+
+		case c2sCmdPlayForward:
+			logger.Nomal("ws", "c2s Cmd Play Forward")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: foward,
+			}
+
+		case c2sCmdPlayForwardTwice:
+			logger.Nomal("ws", "c2s Cmd Play Forward Twice")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: fowardTwice,
+			}
+
+		case c2sCmdPlayRewind:
+			logger.Nomal("ws", "c2s Cmd Play Rewind")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: rewind,
+			}
+
+		case c2sCmdPlayRewindTwice:
+			logger.Nomal("ws", "c2s Cmd Play Rewind Twice")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: rewindTwice,
+			}
+
+		case c2sCmdPlayPause:
+			logger.Nomal("ws", "c2s Cmd Play Pause")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: pause,
+			}
+
+		case c2sCmdPlayRestart:
+			logger.Nomal("ws", "c2s Cmd Play Restart")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: restart,
+			}
+
+		case c2sCmdPlaySendBlank:
+			logger.Nomal("ws", "c2s Cmd Play Send Space")
+			broadcastSendBlank(&m)
+
+		case c2sCmdDeleteAutoSub:
+			logger.Nomal("ws", "c2s Cmd Delete Auto Sub")
+			err := m.handleDeleteAutoSub()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("delete auto sub: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
+		case c2sCmdGetAutoPlayStat:
+			logger.Nomal("ws", "c2s Cmd Get Auto Play Stat")
+			rdbCtx := context.Background()
+			err := m.handleGetAutoPlayStat(rdbCtx)
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get auto play stat err: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
+		case c2sCmdRecoverPlayStat:
+			// 初始化房间会暂停当前房间内的播放(如果正在播放)
+			// 并删除储存在redis中的房间stat, 以及全部的ctx
+			logger.Nomal("ws", "c2s Cmd Recover Play Stat")
+			allAutoCtxs.delRoom(m.room)
+
+			rdbCtx := context.Background()
+			err := m.handleRecoverPlayStat(rdbCtx)
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get auto play stat err: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
+		case c2sCmdHeartBeat:
+			logger.Info(
+				"ws",
+				"heart beat",
+				fmt.Sprintf("room: %v, user: %v", s.room, cUname),
+				fmt.Sprintf("now allAutoCtxs: \n==%v==\n", allAutoCtxs),
+			)
+			WsHub.castself <- m
+
 		default:
-			fmt.Printf("\n --undefined cmd-- \n %+v \n", string(msg))
+			logger.Err("ws", fmt.Sprintf("\n --undefined cmd-- \n %+v \n", string(msg)))
 		}
 	}
 }
@@ -248,7 +414,7 @@ func (s subscription) writePump() {
 	}
 }
 
-func WsController(c *gin.Context, roomid string) {
+func WsController(c *gin.Context, wsroom string) {
 	fmt.Println("ws controller called")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -261,7 +427,7 @@ func WsController(c *gin.Context, roomid string) {
 	}()
 
 	conn := &connection{send: make(chan []byte, 256), ws: ws}
-	sub := subscription{conn: conn, room: roomid}
+	sub := subscription{conn: conn, room: wsroom}
 	WsHub.register <- sub
 
 	go sub.writePump()

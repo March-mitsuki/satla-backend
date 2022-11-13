@@ -1,7 +1,9 @@
 package db
 
+import "github.com/March-mitsuki/satla-backend/model"
+
 type ArgAddSubtitle struct {
-	ProjectId     uint
+	RoomId        uint
 	PreSubtitleId uint
 	CheckedBy     string
 }
@@ -17,4 +19,9 @@ type ArgChangeUserPassword struct {
 	ID      uint
 	OldPass string
 	NewPass string
+}
+
+type ArgAddAutoSub struct {
+	AutoSubs []model.AutoSub
+	Memo     string
 }

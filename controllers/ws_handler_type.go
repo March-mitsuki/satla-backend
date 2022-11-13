@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+
 	"github.com/March-mitsuki/satla-backend/model"
 )
 
@@ -18,6 +20,54 @@ type SubtitleFromClient struct {
 	CheckedBy    string      `json:"checked_by"`
 	Subtitle     string      `json:"subtitle"`
 	Origin       string      `json:"origin"`
+}
+
+// 自动播放时使用的ctx组合
+type autoCtxData struct {
+	ctx     context.Context
+	cancel  context.CancelFunc
+	listId  uint
+	opeChan chan autoOpeData
+}
+type autoCtxs map[string][]autoCtxData
+type autoOpeData struct {
+	opeType opeCmd
+}
+type opeCmd uint
+
+const (
+	foward opeCmd = iota
+	fowardTwice
+	rewind
+	rewindTwice
+	pause
+	restart
+)
+
+type autoPreview struct {
+	BehindTwo model.AutoSub `json:"behind_two"`
+	Behind    model.AutoSub `json:"behind"`
+	Main      model.AutoSub `json:"main"`
+	Next      model.AutoSub `json:"next"`
+	NextTwo   model.AutoSub `json:"next_two"`
+}
+
+// redis储存当前房间状态
+
+type playState int
+
+const (
+	stopped playState = iota
+	playing
+	paused
+)
+
+type autoPlayState struct {
+	Wsroom  string        `json:"wsroom"`
+	State   playState     `json:"state"`
+	ListId  uint          `json:"list_id"`
+	NowSub  model.AutoSub `json:"now_sub"`
+	Preview autoPreview   `json:"preview"`
 }
 
 // c2s -> client to server
@@ -40,8 +90,24 @@ const (
 	c2sCmdChangeStyle        string = "changeStyle"
 	c2sCmdChangeBilingual    string = "changeBilingual"
 	c2sCmdChangeReversed     string = "changeReversed"
-	c2sCmdHeartBeat          string = "heartBeat"
 )
+const (
+	c2sCmdGetAutoLists     string = "getRoomAutoLists"
+	c2sCmdAddAutoSub       string = "addAutoSub"
+	c2sCmdPlayStart        string = "playStart"
+	c2sCmdPlayEnd          string = "playEnd"
+	c2sCmdPlayForward      string = "playForward"
+	c2sCmdPlayForwardTwice string = "playForwardTwice"
+	c2sCmdPlayRewind       string = "playRewind"
+	c2sCmdPlayRewindTwice  string = "playRewindTwice"
+	c2sCmdPlayPause        string = "playPause"
+	c2sCmdPlayRestart      string = "playRestart"
+	c2sCmdPlaySendBlank    string = "playSendBlank"
+	c2sCmdDeleteAutoSub    string = "deleteAutoSub"
+	c2sCmdGetAutoPlayStat  string = "getAutoPlayStat"
+	c2sCmdRecoverPlayStat  string = "recoverAutoPlayStat"
+)
+const c2sCmdHeartBeat string = "heartBeat"
 
 type s2cCmds string
 
@@ -62,260 +128,16 @@ const (
 	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
 	s2cCmdChangeBilingual    s2cCmds = "sChangeBilingual"
 	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
-	s2cCmdHeartBeat          s2cCmds = "sHeartBeat"
 )
-
-// 定义一个可复用的c2s head方便编写
-type c2sHead struct {
-	Head struct {
-		Cmd string `json:"cmd"`
-	} `json:"head"`
-}
-
-// client会在onopen时发送ChangeUser和getRoomSubtitles
-type c2sChangeUser struct {
-	c2sHead
-	Body struct {
-		Uname string `json:"uname"`
-	} `json:"body"`
-}
-
-// client会在onopen时发送ChangeUser和getRoomSubtitles
-type c2sGetRoomSubtitles struct {
-	c2sHead
-	Body struct {
-		Roomid string `json:"roomid"`
-	} `json:"body"`
-}
-
-type c2sAddSubtitle struct {
-	// 无论up还是down接受的body都相同, 只是cmd不同
-	c2sHead
-	Body struct {
-		PreSubtitleId  uint   `json:"pre_subtitle_id"`
-		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
-		ProjectId      uint   `json:"project_id"`
-		CheckedBy      string `json:"checked_by"`
-	} `json:"body"`
-}
-
-type c2sChangeSubtitle struct {
-	c2sHead
-	Body struct {
-		model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type c2sEditChange struct {
-	// start和end只是cmd不同
-	c2sHead
-	Body struct {
-		Uname      string `json:"uname"`
-		SubtitleId uint   `json:"subtitle_id"`
-	} `json:"body"`
-}
-
-type c2sAddTranslatedSub struct {
-	c2sHead
-	Body struct {
-		ProjectName string         `json:"project_name"`
-		NewSubtitle model.Subtitle `json:"new_subtitle"`
-	} `json:"body"`
-}
-
-type c2sDeleteSubtitle struct {
-	c2sHead
-	Body struct {
-		Subtitle model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type c2sReorderSub struct {
-	// front和back只是cmd不同
-	c2sHead
-	Body struct {
-		OperationUser string `json:"operation_user"`
-		ProjectId     uint   `json:"project_id"`
-		DragId        uint   `json:"drag_id"`
-		DropId        uint   `json:"drop_id"`
-	} `json:"body"`
-}
-
-type c2sSendSubtitle struct {
-	c2sHead
-	Body struct {
-		Subtitle model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type c2sSendSubtitleDirect struct {
-	c2sHead
-	Body struct {
-		Roomid   string         `json:"roomid"`
-		Subtitle model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type c2sChangeStyle struct {
-	c2sHead
-	Body struct {
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
-}
-
-type c2sChangeBilingual struct {
-	c2sHead
-	Body struct {
-		Bilingual bool `json:"bilingual"`
-	} `json:"body"`
-}
-
-type c2sChangeReversed struct {
-	c2sHead
-	Body struct {
-		Reversed bool `json:"reversed"`
-	} `json:"body"`
-}
-
-type c2sHeartBeat struct {
-	c2sHead
-	Body struct {
-		Obj string `json:"obj"`
-	} `json:"body"`
-}
-
-// ------ 以下 s2c ------
-
-type s2cChangeUser struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Users []string `json:"users"`
-	} `json:"body"`
-}
-
-type s2cGetRoomSubtitles struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Subtitles []model.Subtitle `json:"subtitles"`
-		Order     string           `json:"order"`
-	} `json:"body"`
-}
-
-type s2cAddSubtitle struct {
-	// 无论up还是down回复的body都相同, 只是cmd不同
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		ProjectId      uint   `json:"project_id"`
-		NewSubtitleId  uint   `json:"new_subtitle_id"`
-		PreSubtitleIdx uint   `json:"pre_subtitle_idx"`
-		CheckedBy      string `json:"checked_by"`
-	} `json:"body"`
-}
-
-type s2cChangeSubtitle struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Status   bool           `json:"status"`
-		Subtitle model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type s2cEditChange struct {
-	// start和end只是cmd不一样
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Uname      string `json:"uname"`
-		SubtitleId uint   `json:"subtitle_id"`
-	} `json:"body"`
-}
-
-type s2cAddTranslatedSub struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		NewSubtitle model.Subtitle `json:"new_subtitle"`
-	} `json:"body"`
-}
-
-type s2cDeleteSubtitle struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Status     bool `json:"status"`
-		SubtitleId uint `json:"subtitle_id"`
-	} `json:"body"`
-}
-
-type s2cReorderSub struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		OperationUser string `json:"operation_user"`
-		Status        bool   `json:"status"`
-		DragId        uint   `json:"drag_id"`
-		DropId        uint   `json:"drop_id"`
-	} `json:"body"`
-}
-
-type s2cSendSubtitle struct {
-	// 无论哪种发送方式回复都相同
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Status   bool           `json:"status"`
-		Subtitle model.Subtitle `json:"subtitle"`
-	} `json:"body"`
-}
-
-type s2cChangeStyle struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Reversed bool   `json:"reverse"`
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
-}
-
-type s2cChangeBilingual struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Bilingual bool `json:"bilingual"`
-	} `json:"body"`
-}
-
-type s2cChangeReversed struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Reversed bool `json:"reversed"`
-	} `json:"body"`
-}
-
-type s2cHeartBeat struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Data interface{} `json:"data"`
-	} `json:"body"`
-}
+const (
+	s2cCmdGetAutoLists      s2cCmds = "sGetRoomAutoLists"
+	s2cCmdAddAutoSub        s2cCmds = "sAddAutoSub"
+	s2cCmdAutoPlayErr       s2cCmds = "autoPlayErr"
+	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
+	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
+	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
+	s2cCmdDeleteAutoSub     s2cCmds = "sDeleteAutoSub"
+	s2cCmdGetAutoPlayStat   s2cCmds = "sGetAutoPlayStat"
+	s2cCmdRecoverPlayStat   s2cCmds = "sRecoverAutoPlayStat"
+)
+const s2cCmdHeartBeat s2cCmds = "sHeartBeat"
