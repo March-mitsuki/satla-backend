@@ -173,6 +173,15 @@ type s2cAutoPreviewChange struct {
 	Body autoPreview `json:"body"`
 }
 
+type s2cAutoPlayStart struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
 type s2cAutoPlayEnd struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
@@ -205,6 +214,17 @@ type s2cRecoverPlayStat struct {
 	} `json:"head"`
 	Body struct {
 		Status bool `json:"status"`
+	} `json:"body"`
+}
+
+type s2cChangeAutoMemo struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status bool   `json:"status"`
+		ListId uint   `json:"list_id"`
+		Memo   string `json:"memo"`
 	} `json:"body"`
 }
 

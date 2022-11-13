@@ -106,6 +106,7 @@ const (
 	c2sCmdDeleteAutoSub    string = "deleteAutoSub"
 	c2sCmdGetAutoPlayStat  string = "getAutoPlayStat"
 	c2sCmdRecoverPlayStat  string = "recoverAutoPlayStat"
+	c2sCmdChangeAutoMemo   string = "changeAutoMemo"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -135,9 +136,11 @@ const (
 	s2cCmdAutoPlayErr       s2cCmds = "autoPlayErr"
 	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
 	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
+	s2cCmdAutoPlayStart     s2cCmds = "autoPlayStart"
 	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
 	s2cCmdDeleteAutoSub     s2cCmds = "sDeleteAutoSub"
 	s2cCmdGetAutoPlayStat   s2cCmds = "sGetAutoPlayStat"
 	s2cCmdRecoverPlayStat   s2cCmds = "sRecoverAutoPlayStat"
+	s2cCmdChangeAutoMemo    s2cCmds = "sChangeAutoMemo"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

@@ -121,12 +121,30 @@ func (m *message) handlePlayStart(ctx context.Context, ope chan autoOpeData) err
 		logger.Err("wsHandler", fmt.Sprintf("unmarshal wsData === \n %v \n ===", unmarshalErr))
 		return unmarshalErr
 	}
-	var autoSubs []model.AutoSub
-	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
-	if result.Error != nil {
-		logger.Err("wsHandler", fmt.Sprintf("[auto] === \n %v \n ===", result.Error))
+	_data := s2cAutoPlayStart{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoPlayStart,
+		},
+		Body: struct {
+			ListId uint "json:\"list_id\""
+		}{
+			ListId: wsData.Body.ListId,
+		},
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+
+	autoSubs, dbErr := db.HandleAutoPlayStart(wsData.Body.ListId)
+	if dbErr != nil {
+		logger.Err("wsHandler", fmt.Sprintf("[auto] === \n %v \n ===", dbErr))
 		broadcastAutoPlayErr(m, "start err")
-		return result.Error
+		return dbErr
 	}
 	go autoPlayStart(ctx, m, &autoSubs, ope)
 	return nil
@@ -397,7 +415,8 @@ LOOP:
 				logger.Err("json", fmt.Sprintf("auto play stop manually json marshal: %v", marshalErr))
 				return
 			}
-			rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+			rdbCtx := context.Background()
+			rdbErr := db.Rdb.Set(rdbCtx, rdbKey, rdbValueStr, 5*time.Minute).Err()
 			if rdbErr != nil {
 				logger.Err("rdb", fmt.Sprintf("auto play stop manually set: %v", rdbErr))
 				return
@@ -638,9 +657,15 @@ func (m *message) handleGetAutoPlayStat(rdbCtx context.Context) error {
 }
 
 func (m *message) handleRecoverPlayStat(ctx context.Context) error {
+	var wsData c2sRecoverPlayStat
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
 	var _data s2cRecoverPlayStat
-	delErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
-	if delErr != nil {
+	rdbErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
+	dbErr := db.SetRoomListsUnsent(wsData.Body.RoomId)
+	if rdbErr != nil || dbErr != nil {
 		_data = s2cRecoverPlayStat{
 			Head: struct {
 				Cmd s2cCmds "json:\"cmd\""
@@ -664,6 +689,59 @@ func (m *message) handleRecoverPlayStat(ctx context.Context) error {
 				Status bool "json:\"status\""
 			}{
 				Status: true,
+			},
+		}
+	}
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleChangeAutoMemo() error {
+	var wsData c2sChangeAutoMemo
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+	dbErr := db.ChangeAutoMemo(wsData.Body.ListId, wsData.Body.Memo)
+
+	var _data s2cChangeAutoMemo
+	if dbErr != nil {
+		_data = s2cChangeAutoMemo{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdChangeAutoMemo,
+			},
+			Body: struct {
+				Status bool   "json:\"status\""
+				ListId uint   "json:\"list_id\""
+				Memo   string "json:\"memo\""
+			}{
+				Status: false,
+				ListId: wsData.Body.ListId,
+				Memo:   wsData.Body.Memo,
+			},
+		}
+	} else {
+		_data = s2cChangeAutoMemo{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdChangeAutoMemo,
+			},
+			Body: struct {
+				Status bool   "json:\"status\""
+				ListId uint   "json:\"list_id\""
+				Memo   string "json:\"memo\""
+			}{
+				Status: true,
+				ListId: wsData.Body.ListId,
+				Memo:   wsData.Body.Memo,
 			},
 		}
 	}

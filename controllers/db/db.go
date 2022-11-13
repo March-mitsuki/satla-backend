@@ -466,3 +466,39 @@ func DeleteAutoSub(listId uint) error {
 	}
 	return nil
 }
+
+func HandleAutoPlayStart(listId uint) ([]model.AutoSub, error) {
+	// 将对应list设置为已播放, 并返回对应所有autoSubs
+	var autoSubs []model.AutoSub
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		findResult := tx.Where("list_id = ?", listId).Find(&autoSubs)
+		if findResult.Error != nil {
+			return findResult.Error
+		}
+		updateResult := tx.Model(&model.AutoList{}).Where("id = ?", listId).Update("is_sent", true)
+		if updateResult.Error != nil {
+			return updateResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return autoSubs, err
+	}
+	return autoSubs, nil
+}
+
+func SetRoomListsUnsent(roomId uint) error {
+	result := Mdb.Model(&model.AutoList{}).Where("room_id = ?", roomId).Update("is_sent", false)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func ChangeAutoMemo(listId uint, memo string) error {
+	result := Mdb.Model(&model.AutoList{}).Where("id = ?", listId).Update("memo", memo)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
