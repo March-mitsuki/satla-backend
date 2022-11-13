@@ -146,6 +146,20 @@ type c2sDeleteAutoSub struct {
 	} `json:"body"`
 }
 
+type c2sGetAutoPlayStat struct {
+	c2sHead
+	Body struct {
+		Data interface{} `json:"data"`
+	} `json:"body"`
+}
+
+type c2sRecoverAutoPlayStat struct {
+	c2sHead
+	Body struct {
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {

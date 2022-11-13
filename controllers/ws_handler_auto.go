@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/March-mitsuki/satla-backend/utils/logger"
+	"github.com/March-mitsuki/satla-backend/utils/stat"
+	"github.com/go-redis/redis/v9"
 
 	"github.com/March-mitsuki/satla-backend/controllers/db"
 	"github.com/March-mitsuki/satla-backend/model"
@@ -147,65 +149,6 @@ func makeAutoChangeSub(s model.AutoSub) s2cAutoChangeSub {
 	return data
 }
 
-// main logic of auto play
-func autoPlayStartOld(m *message, ctx context.Context, autoSubs []model.AutoSub) {
-	defer func() {
-		// 结束播放时保证最后一次发送一定是空行
-		_lastSend := makeAutoChangeSub(model.AutoSub{})
-		data, marshalErr := json.Marshal(&_lastSend)
-		if marshalErr != nil {
-			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
-			broadcastAutoPlayErr(m, "loop marshal error")
-			return
-		}
-		m.data = data
-		WsHub.broadcast <- *m
-		logger.Info("autoPlayOld", "Auto Play Finish")
-	}()
-
-	logger.Info("autoPlayOld", "auto play start")
-	for _, v := range autoSubs {
-		_data := makeAutoChangeSub(v)
-		data, marshalErr := json.Marshal(&_data)
-		if marshalErr != nil {
-			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", marshalErr))
-			broadcastAutoPlayErr(m, "loop marshal error")
-			return
-		}
-		m.data = data
-		d, dErr := time.ParseDuration(fmt.Sprintf("%vs", v.Duration))
-		if dErr != nil {
-			logger.Err("autoPlayOld", fmt.Sprintf("[auto] === \n %v \n ===", dErr))
-			broadcastAutoPlayErr(m, "loop parse duration error")
-			return
-		}
-		WsHub.broadcast <- *m
-		var wg sync.WaitGroup
-		timer := time.NewTimer(d)
-		wg.Add(1)
-		go cancelableSleepOld(ctx, timer, &wg)
-		wg.Wait()
-	}
-	return
-}
-
-func cancelableSleepOld(ctx context.Context, t *time.Timer, wg *sync.WaitGroup) {
-	defer func() {
-		wg.Done()
-		logger.Info("autoPlayOld", "Sleep done")
-	}()
-LOOP:
-	for {
-		select {
-		case <-ctx.Done():
-			break LOOP
-		case <-t.C:
-			break LOOP
-		}
-	}
-	return
-}
-
 func calc() calcData {
 	num := 0
 	sum := func(i int) int {
@@ -244,6 +187,28 @@ func autoPlayStart(
 	}
 	broadcastAutoChangeSub(m, &subtitle)
 	broadcastAutoPreviewChange(m, autoSubs, 0)
+
+	// set redis for room state checker
+	rdbKey := stat.MakeRdbKeys(m.room)
+	rdbValue := autoPlayState{
+		Wsroom:  m.room,
+		State:   playing,
+		ListId:  subtitle.ListId,
+		NowSub:  subtitle,
+		Preview: makeAutoPreview(autoSubs, 0),
+	}
+	rdbValueStr, marshalErr := json.MarshalToString(rdbValue)
+	if marshalErr != nil {
+		logger.Err("json", fmt.Sprintf("auto play start json marshal: %v", marshalErr))
+		return
+	}
+	rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+	if rdbErr != nil {
+		logger.Err("rdb", fmt.Sprintf("auto play start set: %v", rdbErr))
+		broadcastAutoPlayErr(m, "rdb err")
+		return
+	}
+
 	timer := time.NewTimer(d)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -266,6 +231,23 @@ func autoPlayLoop(
 		go broadcastPreviewEnd(m)
 		go broadcastAutoPlayEnd(m)
 		allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
+
+		// set redis for room state checker
+		rdbKey := stat.MakeRdbKeys(m.room)
+		rdbValue := autoPlayState{
+			Wsroom: m.room,
+			State:  stopped,
+		}
+		rdbValueStr, marshalErr := json.MarshalToString(rdbValue)
+		if marshalErr != nil {
+			logger.Err("json", fmt.Sprintf("auto play stop json marshal: %v", marshalErr))
+			return
+		}
+		rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+		if rdbErr != nil {
+			logger.Err("rdb", fmt.Sprintf("auto play stop set: %v", rdbErr))
+			return
+		}
 		return
 	}
 	subtitle := (*autoSubs)[ca.adder(1)]
@@ -277,6 +259,27 @@ func autoPlayLoop(
 	}
 	broadcastAutoChangeSub(m, &subtitle)
 	broadcastAutoPreviewChange(m, autoSubs, ca.adder(0))
+
+	// set redis for room state checker
+	rdbKey := stat.MakeRdbKeys(m.room)
+	rdbValue := autoPlayState{
+		Wsroom:  m.room,
+		State:   playing,
+		ListId:  subtitle.ListId,
+		NowSub:  subtitle,
+		Preview: makeAutoPreview(autoSubs, ca.adder(0)),
+	}
+	rdbValueStr, marshalErr := json.MarshalToString(rdbValue)
+	if marshalErr != nil {
+		logger.Err("json", fmt.Sprintf("auto play loop json marshal: %v", marshalErr))
+		return
+	}
+	rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+	if rdbErr != nil {
+		logger.Err("rdb", fmt.Sprintf("auto play loop set: %v", rdbErr))
+		return
+	}
+
 	timer := time.NewTimer(d)
 	wg.Add(1)
 	cancelableSleep(ctx, timer, wg, ca, m, autoSubs, ope)
@@ -296,112 +299,13 @@ func broadcastAutoChangeSub(m *message, sub *model.AutoSub) {
 }
 
 func broadcastAutoPreviewChange(m *message, autoSubs *[]model.AutoSub, nowNum int) {
-	var _data s2cAutoPreviewChange
-	if nowNum-1 < 0 {
-		_data = s2cAutoPreviewChange{
-			Head: struct {
-				Cmd s2cCmds "json:\"cmd\""
-			}{
-				Cmd: s2cCmdAutoPreviewChange,
-			},
-			Body: struct {
-				BehindTwo model.AutoSub "json:\"behind_two\""
-				Behind    model.AutoSub "json:\"behind\""
-				Main      model.AutoSub "json:\"main\""
-				Next      model.AutoSub "json:\"next\""
-				NextTwo   model.AutoSub "json:\"next_two\""
-			}{
-				BehindTwo: model.AutoSub{},
-				Behind:    model.AutoSub{},
-				Main:      (*autoSubs)[nowNum],
-				Next:      (*autoSubs)[nowNum+1],
-				NextTwo:   (*autoSubs)[nowNum+2],
-			},
-		}
-	} else if nowNum-2 < 0 {
-		_data = s2cAutoPreviewChange{
-			Head: struct {
-				Cmd s2cCmds "json:\"cmd\""
-			}{
-				Cmd: s2cCmdAutoPreviewChange,
-			},
-			Body: struct {
-				BehindTwo model.AutoSub "json:\"behind_two\""
-				Behind    model.AutoSub "json:\"behind\""
-				Main      model.AutoSub "json:\"main\""
-				Next      model.AutoSub "json:\"next\""
-				NextTwo   model.AutoSub "json:\"next_two\""
-			}{
-				BehindTwo: model.AutoSub{},
-				Behind:    (*autoSubs)[nowNum-1],
-				Main:      (*autoSubs)[nowNum],
-				Next:      (*autoSubs)[nowNum+1],
-				NextTwo:   (*autoSubs)[nowNum+2],
-			},
-		}
-	} else if nowNum+1 > len(*autoSubs)-1 {
-		_data = s2cAutoPreviewChange{
-			Head: struct {
-				Cmd s2cCmds "json:\"cmd\""
-			}{
-				Cmd: s2cCmdAutoPreviewChange,
-			},
-			Body: struct {
-				BehindTwo model.AutoSub "json:\"behind_two\""
-				Behind    model.AutoSub "json:\"behind\""
-				Main      model.AutoSub "json:\"main\""
-				Next      model.AutoSub "json:\"next\""
-				NextTwo   model.AutoSub "json:\"next_two\""
-			}{
-				BehindTwo: (*autoSubs)[nowNum-2],
-				Behind:    (*autoSubs)[nowNum-1],
-				Main:      (*autoSubs)[nowNum],
-				Next:      model.AutoSub{},
-				NextTwo:   model.AutoSub{},
-			},
-		}
-	} else if nowNum+2 > len(*autoSubs)-1 {
-		_data = s2cAutoPreviewChange{
-			Head: struct {
-				Cmd s2cCmds "json:\"cmd\""
-			}{
-				Cmd: s2cCmdAutoPreviewChange,
-			},
-			Body: struct {
-				BehindTwo model.AutoSub "json:\"behind_two\""
-				Behind    model.AutoSub "json:\"behind\""
-				Main      model.AutoSub "json:\"main\""
-				Next      model.AutoSub "json:\"next\""
-				NextTwo   model.AutoSub "json:\"next_two\""
-			}{
-				BehindTwo: (*autoSubs)[nowNum-2],
-				Behind:    (*autoSubs)[nowNum-1],
-				Main:      (*autoSubs)[nowNum],
-				Next:      (*autoSubs)[nowNum+1],
-				NextTwo:   model.AutoSub{},
-			},
-		}
-	} else {
-		_data = s2cAutoPreviewChange{
-			Head: struct {
-				Cmd s2cCmds "json:\"cmd\""
-			}{
-				Cmd: s2cCmdAutoPreviewChange,
-			},
-			Body: struct {
-				BehindTwo model.AutoSub "json:\"behind_two\""
-				Behind    model.AutoSub "json:\"behind\""
-				Main      model.AutoSub "json:\"main\""
-				Next      model.AutoSub "json:\"next\""
-				NextTwo   model.AutoSub "json:\"next_two\""
-			}{
-				BehindTwo: (*autoSubs)[nowNum-2],
-				Behind:    (*autoSubs)[nowNum-1],
-				Main:      (*autoSubs)[nowNum],
-				Next:      (*autoSubs)[nowNum+1],
-				NextTwo:   (*autoSubs)[nowNum+2],
-			},
-		}
+	_data := s2cAutoPreviewChange{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdAutoPreviewChange,
+		},
+		Body: makeAutoPreview(autoSubs, nowNum),
 	}
 
 	data, marshalErr := json.Marshal(&_data)
@@ -412,6 +316,52 @@ func broadcastAutoPreviewChange(m *message, autoSubs *[]model.AutoSub, nowNum in
 	}
 	m.data = data
 	WsHub.broadcast <- *m
+}
+
+func makeAutoPreview(autoSubs *[]model.AutoSub, nowNum int) autoPreview {
+	var result autoPreview
+	if nowNum-1 < 0 {
+		result = autoPreview{
+			BehindTwo: model.AutoSub{},
+			Behind:    model.AutoSub{},
+			Main:      (*autoSubs)[nowNum],
+			Next:      (*autoSubs)[nowNum+1],
+			NextTwo:   (*autoSubs)[nowNum+2],
+		}
+	} else if nowNum-2 < 0 {
+		result = autoPreview{
+			BehindTwo: model.AutoSub{},
+			Behind:    (*autoSubs)[nowNum-1],
+			Main:      (*autoSubs)[nowNum],
+			Next:      (*autoSubs)[nowNum+1],
+			NextTwo:   (*autoSubs)[nowNum+2],
+		}
+	} else if nowNum+1 > len(*autoSubs)-1 {
+		result = autoPreview{
+			BehindTwo: (*autoSubs)[nowNum-2],
+			Behind:    (*autoSubs)[nowNum-1],
+			Main:      (*autoSubs)[nowNum],
+			Next:      model.AutoSub{},
+			NextTwo:   model.AutoSub{},
+		}
+	} else if nowNum+2 > len(*autoSubs)-1 {
+		result = autoPreview{
+			BehindTwo: (*autoSubs)[nowNum-2],
+			Behind:    (*autoSubs)[nowNum-1],
+			Main:      (*autoSubs)[nowNum],
+			Next:      (*autoSubs)[nowNum+1],
+			NextTwo:   model.AutoSub{},
+		}
+	} else {
+		result = autoPreview{
+			BehindTwo: (*autoSubs)[nowNum-2],
+			Behind:    (*autoSubs)[nowNum-1],
+			Main:      (*autoSubs)[nowNum],
+			Next:      (*autoSubs)[nowNum+1],
+			NextTwo:   (*autoSubs)[nowNum+2],
+		}
+	}
+	return result
 }
 
 func cancelableSleep(
@@ -436,6 +386,22 @@ LOOP:
 			go broadcastPreviewEnd(m)
 			go broadcastAutoPlayEnd(m)
 			allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
+			// set redis for room state checker
+			rdbKey := stat.MakeRdbKeys(m.room)
+			rdbValue := autoPlayState{
+				Wsroom: m.room,
+				State:  stopped,
+			}
+			rdbValueStr, marshalErr := json.MarshalToString(rdbValue)
+			if marshalErr != nil {
+				logger.Err("json", fmt.Sprintf("auto play stop manually json marshal: %v", marshalErr))
+				return
+			}
+			rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+			if rdbErr != nil {
+				logger.Err("rdb", fmt.Sprintf("auto play stop manually set: %v", rdbErr))
+				return
+			}
 			break LOOP
 		case o := <-ope:
 			switch o.opeType {
@@ -461,6 +427,25 @@ LOOP:
 			case pause:
 				logger.Info("sleep", "pause now")
 				t.Stop()
+				// set redis for room state checker
+				rdbKey := stat.MakeRdbKeys(m.room)
+				rdbValue := autoPlayState{
+					Wsroom:  m.room,
+					State:   playing,
+					ListId:  (*autoSubs)[0].ListId,
+					NowSub:  (*autoSubs)[ca.adder(0)],
+					Preview: makeAutoPreview(autoSubs, ca.adder(0)),
+				}
+				rdbValueStr, marshalErr := json.MarshalToString(rdbValue)
+				if marshalErr != nil {
+					logger.Err("json", fmt.Sprintf("auto play stop manually json marshal: %v", marshalErr))
+					return
+				}
+				rdbErr := db.Rdb.Set(ctx, rdbKey, rdbValueStr, 5*time.Minute).Err()
+				if rdbErr != nil {
+					logger.Err("rdb", fmt.Sprintf("auto play pause set: %v", rdbErr))
+					return
+				}
 				for {
 					o := <-ope
 					if o.opeType == restart {
@@ -610,6 +595,79 @@ func (m *message) handleDeleteAutoSub() error {
 			},
 		}
 	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleGetAutoPlayStat(rdbCtx context.Context) error {
+	var state autoPlayState
+
+	val, rdbErr := db.Rdb.Get(rdbCtx, stat.MakeRdbKeys(m.room)).Result()
+	if rdbErr == redis.Nil {
+		logger.Warn("wsHandler", "redis get auto play stat, the key is expire or undefined")
+		(&state).State = stopped
+	} else if rdbErr != nil {
+		return rdbErr
+	} else if val == "" {
+		logger.Warn("wsHandler", "redis get auto play stat, the value is empty")
+		(&state).State = stopped
+	} else {
+		unmarshalErr := json.UnmarshalFromString(val, &state)
+		if unmarshalErr != nil {
+			return unmarshalErr
+		}
+	}
+	_data := s2cGetAutoPlayStat{
+		Head: struct {
+			Cmd s2cCmds "json:\"cmd\""
+		}{
+			Cmd: s2cCmdGetAutoPlayStat,
+		},
+		Body: state,
+	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+	return nil
+}
+
+func (m *message) handleRecoverPlayStat(ctx context.Context) error {
+	var _data s2cRecoverPlayStat
+	delErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
+	if delErr != nil {
+		_data = s2cRecoverPlayStat{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdRecoverPlayStat,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+			}{
+				Status: false,
+			},
+		}
+	} else {
+		_data = s2cRecoverPlayStat{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdRecoverPlayStat,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+			}{
+				Status: true,
+			},
+		}
+	}
+
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		return marshalErr

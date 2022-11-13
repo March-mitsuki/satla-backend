@@ -170,13 +170,7 @@ type s2cAutoPreviewChange struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
-	Body struct {
-		BehindTwo model.AutoSub `json:"behind_two"`
-		Behind    model.AutoSub `json:"behind"`
-		Main      model.AutoSub `json:"main"`
-		Next      model.AutoSub `json:"next"`
-		NextTwo   model.AutoSub `json:"next_two"`
-	} `json:"body"`
+	Body autoPreview `json:"body"`
 }
 
 type s2cAutoPlayEnd struct {
@@ -195,6 +189,22 @@ type s2cDeleteAutoSub struct {
 	Body struct {
 		Status bool `json:"status"`
 		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
+type s2cGetAutoPlayStat struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body autoPlayState `json:"body"`
+}
+
+type s2cRecoverPlayStat struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status bool `json:"status"`
 	} `json:"body"`
 }
 

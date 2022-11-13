@@ -351,6 +351,30 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 
+		case c2sCmdGetAutoPlayStat:
+			logger.Nomal("ws", "c2s Cmd Get Auto Play Stat")
+			rdbCtx := context.Background()
+			err := m.handleGetAutoPlayStat(rdbCtx)
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get auto play stat err: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
+		case c2sCmdRecoverPlayStat:
+			// 初始化房间会暂停当前房间内的播放(如果正在播放)
+			// 并删除储存在redis中的房间stat, 以及全部的ctx
+			logger.Nomal("ws", "c2s Cmd Recover Play Stat")
+			allAutoCtxs.delRoom(m.room)
+
+			rdbCtx := context.Background()
+			err := m.handleRecoverPlayStat(rdbCtx)
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get auto play stat err: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
 		case c2sCmdHeartBeat:
 			logger.Info(
 				"ws",

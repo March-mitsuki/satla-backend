@@ -1,6 +1,10 @@
 package controllers
 
-import "context"
+import (
+	"context"
+
+	"github.com/March-mitsuki/satla-backend/model"
+)
 
 type roomUsers map[string][]string
 
@@ -18,6 +22,7 @@ type SubtitleFromClient struct {
 	Origin       string      `json:"origin"`
 }
 
+// 自动播放时使用的ctx组合
 type autoCtxData struct {
 	ctx     context.Context
 	cancel  context.CancelFunc
@@ -38,6 +43,32 @@ const (
 	pause
 	restart
 )
+
+type autoPreview struct {
+	BehindTwo model.AutoSub `json:"behind_two"`
+	Behind    model.AutoSub `json:"behind"`
+	Main      model.AutoSub `json:"main"`
+	Next      model.AutoSub `json:"next"`
+	NextTwo   model.AutoSub `json:"next_two"`
+}
+
+// redis储存当前房间状态
+
+type playState int
+
+const (
+	stopped playState = iota
+	playing
+	paused
+)
+
+type autoPlayState struct {
+	Wsroom  string        `json:"wsroom"`
+	State   playState     `json:"state"`
+	ListId  uint          `json:"list_id"`
+	NowSub  model.AutoSub `json:"now_sub"`
+	Preview autoPreview   `json:"preview"`
+}
 
 // c2s -> client to server
 // s2c -> server to client
@@ -73,6 +104,8 @@ const (
 	c2sCmdPlayRestart      string = "playRestart"
 	c2sCmdPlaySendBlank    string = "playSendBlank"
 	c2sCmdDeleteAutoSub    string = "deleteAutoSub"
+	c2sCmdGetAutoPlayStat  string = "getAutoPlayStat"
+	c2sCmdRecoverPlayStat  string = "recoverAutoPlayStat"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -104,5 +137,7 @@ const (
 	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
 	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
 	s2cCmdDeleteAutoSub     s2cCmds = "sDeleteAutoSub"
+	s2cCmdGetAutoPlayStat   s2cCmds = "sGetAutoPlayStat"
+	s2cCmdRecoverPlayStat   s2cCmds = "sRecoverAutoPlayStat"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"
