@@ -212,5 +212,6 @@ func main() {
 		return
 	})
 
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	r.Run(fmt.Sprintf(":%v", port))
 }
