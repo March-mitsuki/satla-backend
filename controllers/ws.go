@@ -364,6 +364,7 @@ func (s subscription) readPump() {
 		case c2sCmdRecoverPlayStat:
 			// 初始化房间会暂停当前房间内的播放(如果正在播放)
 			// 并删除储存在redis中的房间stat, 以及全部的ctx
+			// 并更改该房间内所有List为未播放
 			logger.Nomal("ws", "c2s Cmd Recover Play Stat")
 			allAutoCtxs.delRoom(m.room)
 

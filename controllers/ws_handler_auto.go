@@ -140,12 +140,11 @@ func (m *message) handlePlayStart(ctx context.Context, ope chan autoOpeData) err
 	m.data = data
 	WsHub.broadcast <- *m
 
-	var autoSubs []model.AutoSub
-	result := db.Mdb.Where("list_id = ?", wsData.Body.ListId).Find(&autoSubs)
-	if result.Error != nil {
-		logger.Err("wsHandler", fmt.Sprintf("[auto] === \n %v \n ===", result.Error))
+	autoSubs, dbErr := db.HandleAutoPlayStart(wsData.Body.ListId)
+	if dbErr != nil {
+		logger.Err("wsHandler", fmt.Sprintf("[auto] === \n %v \n ===", dbErr))
 		broadcastAutoPlayErr(m, "start err")
-		return result.Error
+		return dbErr
 	}
 	go autoPlayStart(ctx, m, &autoSubs, ope)
 	return nil
@@ -658,9 +657,15 @@ func (m *message) handleGetAutoPlayStat(rdbCtx context.Context) error {
 }
 
 func (m *message) handleRecoverPlayStat(ctx context.Context) error {
+	var wsData c2sRecoverPlayStat
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
 	var _data s2cRecoverPlayStat
-	delErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
-	if delErr != nil {
+	rdbErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
+	dbErr := db.SetRoomListsUnsent(wsData.Body.RoomId)
+	if rdbErr != nil || dbErr != nil {
 		_data = s2cRecoverPlayStat{
 			Head: struct {
 				Cmd s2cCmds "json:\"cmd\""

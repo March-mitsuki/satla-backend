@@ -62,6 +62,7 @@ type AutoList struct {
 	FirstSubtitle string `gorm:"not null;type:text" json:"first_subtitle"`
 	FirstOrigin   string `gorm:"type:text" json:"first_origin"`
 	Memo          string `gorm:"type:varchar(128)" json:"memo"`
+	IsSent        bool   `gorm:"not null;default:false" json:"is_sent"`
 }
 
 type AutoSub struct {

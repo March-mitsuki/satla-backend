@@ -153,10 +153,10 @@ type c2sGetAutoPlayStat struct {
 	} `json:"body"`
 }
 
-type c2sRecoverAutoPlayStat struct {
+type c2sRecoverPlayStat struct {
 	c2sHead
 	Body struct {
-		ListId uint `json:"list_id"`
+		RoomId uint `json:"room_id"`
 	} `json:"body"`
 }
 
