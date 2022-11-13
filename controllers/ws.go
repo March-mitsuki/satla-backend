@@ -375,6 +375,15 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 
+		case c2sCmdChangeAutoMemo:
+			logger.Nomal("ws", "c2s Cmd Change Auto Memo")
+			err := m.handleChangeAutoMemo()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("change auto memo err: %v \n", err))
+				return
+			}
+			WsHub.broadcast <- m
+
 		case c2sCmdHeartBeat:
 			logger.Info(
 				"ws",

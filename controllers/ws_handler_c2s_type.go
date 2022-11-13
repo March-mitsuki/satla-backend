@@ -160,6 +160,14 @@ type c2sRecoverAutoPlayStat struct {
 	} `json:"body"`
 }
 
+type c2sChangeAutoMemo struct {
+	c2sHead
+	Body struct {
+		ListId uint   `json:"list_id"`
+		Memo   string `json:"memo"`
+	} `json:"body"`
+}
+
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {

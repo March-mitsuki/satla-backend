@@ -466,3 +466,11 @@ func DeleteAutoSub(listId uint) error {
 	}
 	return nil
 }
+
+func ChangeAutoMemo(listId uint, memo string) error {
+	result := Mdb.Model(&model.AutoList{}).Where("id = ?", listId).Update("memo", memo)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
