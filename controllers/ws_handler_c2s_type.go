@@ -151,6 +151,20 @@ type c2sChangeAutoMemo struct {
 	} `json:"body"`
 }
 
+type c2sGetNowRoomStyle struct {
+	c2sHead
+	Body struct {
+		Wsroom string `json:"wsroom"`
+	} `json:"body"`
+}
+
+type c2sGetNowRoomSub struct {
+	c2sHead
+	Body struct {
+		Wsroom string `json:"wsroom"`
+	} `json:"body"`
+}
+
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {

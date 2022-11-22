@@ -97,6 +97,8 @@ const (
 	c2sCmdSendSubtitle       string = "sendSubtitle"
 	c2sCmdSendSubtitleDirect string = "sendSubtitleDirect"
 	c2sCmdChangeStyle        string = "changeStyle"
+	c2sCmdGetNowRoomStyle    string = "getNowRoomStyle"
+	c2sCmdGetNowRoomSub      string = "getNowRoomSub"
 )
 const (
 	c2sCmdGetAutoLists     string = "getRoomAutoLists"

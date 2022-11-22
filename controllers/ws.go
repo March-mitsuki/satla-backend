@@ -193,8 +193,26 @@ func (s subscription) readPump() {
 				return
 			}
 
+		case c2sCmdGetNowRoomStyle:
+			logger.Nomal("ws", "c2s Cmd Get Now Room Style")
+			err := m.handleGetNowRoomStyle()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get now room style err %v \n", err))
+				return
+			}
+
+		case c2sCmdGetNowRoomSub:
+			logger.Nomal("ws", "c2s Cmd Get Now Room Sub")
+			err := m.handleGetNowRoomSub()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("get now room sub err %v \n", err))
+				return
+			}
+
 		case c2sCmdGetAutoLists:
+			//
 			// 从这里往下是auto page
+			//
 			logger.Nomal("ws", "c2s Cmd Get Auto Lists")
 			err := m.handleGetRoomAutoLists()
 			if err != nil {
