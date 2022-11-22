@@ -58,6 +58,9 @@ func (m *message) handleGetRoomAutoLists() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.castself <- *m
+
 	return nil
 }
 
@@ -111,6 +114,9 @@ func (m *message) handleAddAutoSub() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -619,6 +625,9 @@ func (m *message) handleDeleteAutoSub() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -653,6 +662,9 @@ func (m *message) handleGetAutoPlayStat(rdbCtx context.Context) error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -698,6 +710,9 @@ func (m *message) handleRecoverPlayStat(ctx context.Context) error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -751,5 +766,8 @@ func (m *message) handleChangeAutoMemo() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }

@@ -32,6 +32,9 @@ func (m *message) handleAddUser() (string, error) {
 		return "", marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return wsData.Body.Uname, nil
 }
 
@@ -64,6 +67,9 @@ func (m *message) handleGetRoomSubtitles() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.castself <- *m
+
 	return nil
 }
 
@@ -105,6 +111,9 @@ func (m *message) handleAddSubtitleUp() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -146,6 +155,9 @@ func (m *message) handleAddSubtitleDown() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -200,6 +212,9 @@ func (m *message) handleChangeSubtitle() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -228,6 +243,9 @@ func (m *message) handleEditStart() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -256,6 +274,9 @@ func (m *message) handleEditEnd() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -289,6 +310,9 @@ func (m *message) handleAddTranslatedSub() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -336,6 +360,9 @@ func (m *message) handleDeleteSubtitle() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -396,6 +423,9 @@ func (m *message) handleReorderSubFront() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -456,6 +486,9 @@ func (m *message) handleReorderSubBack() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -504,6 +537,9 @@ func (m *message) handleSendSubtitle() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -552,6 +588,9 @@ func (m *message) handleSendSubtitleDirect() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
@@ -575,6 +614,9 @@ func (m *message) handleChangeStyle() error {
 		return marshalErr
 	}
 	m.data = data
+
+	WsHub.broadcast <- *m
+
 	return nil
 }
 
