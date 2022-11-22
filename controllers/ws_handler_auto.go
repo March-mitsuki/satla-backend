@@ -213,7 +213,7 @@ func autoPlayStart(
 	broadcastAutoPreviewChange(m, autoSubs, 0)
 
 	// set redis for room state checker
-	rdbKey := stat.MakeRdbKeys(m.room)
+	rdbKey := stat.MakeRdbKey(m.room)
 	rdbValue := autoPlayState{
 		Wsroom:  m.room,
 		State:   playing,
@@ -257,7 +257,7 @@ func autoPlayLoop(
 		allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
 
 		// set redis for room state checker
-		rdbKey := stat.MakeRdbKeys(m.room)
+		rdbKey := stat.MakeRdbKey(m.room)
 		rdbValue := autoPlayState{
 			Wsroom: m.room,
 			State:  stopped,
@@ -285,7 +285,7 @@ func autoPlayLoop(
 	broadcastAutoPreviewChange(m, autoSubs, ca.adder(0))
 
 	// set redis for room state checker
-	rdbKey := stat.MakeRdbKeys(m.room)
+	rdbKey := stat.MakeRdbKey(m.room)
 	rdbValue := autoPlayState{
 		Wsroom:  m.room,
 		State:   playing,
@@ -411,7 +411,7 @@ LOOP:
 			go broadcastAutoPlayEnd(m)
 			allAutoCtxs.delCtx(m.room, (*autoSubs)[0].ListId)
 			// set redis for room state checker
-			rdbKey := stat.MakeRdbKeys(m.room)
+			rdbKey := stat.MakeRdbKey(m.room)
 			rdbValue := autoPlayState{
 				Wsroom: m.room,
 				State:  stopped,
@@ -453,7 +453,7 @@ LOOP:
 				logger.Info("sleep", "pause now")
 				t.Stop()
 				// set redis for room state checker
-				rdbKey := stat.MakeRdbKeys(m.room)
+				rdbKey := stat.MakeRdbKey(m.room)
 				rdbValue := autoPlayState{
 					Wsroom:  m.room,
 					State:   playing,
@@ -634,7 +634,7 @@ func (m *message) handleDeleteAutoSub() error {
 func (m *message) handleGetAutoPlayStat(rdbCtx context.Context) error {
 	var state autoPlayState
 
-	val, rdbErr := db.Rdb.Get(rdbCtx, stat.MakeRdbKeys(m.room)).Result()
+	val, rdbErr := db.Rdb.Get(rdbCtx, stat.MakeRdbKey(m.room)).Result()
 	if rdbErr == redis.Nil {
 		logger.Warn("wsHandler", "redis get auto play stat, the key is expire or undefined")
 		(&state).State = stopped
@@ -675,7 +675,7 @@ func (m *message) handleRecoverPlayStat(ctx context.Context) error {
 		return unmarshalErr
 	}
 	var _data s2cRecoverPlayStat
-	rdbErr := db.Rdb.Del(ctx, stat.MakeRdbKeys(m.room)).Err()
+	rdbErr := db.Rdb.Del(ctx, stat.MakeRdbKey(m.room)).Err()
 	dbErr := db.SetRoomListsUnsent(wsData.Body.RoomId)
 	if rdbErr != nil || dbErr != nil {
 		_data = s2cRecoverPlayStat{
