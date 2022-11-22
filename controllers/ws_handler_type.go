@@ -70,6 +70,15 @@ type autoPlayState struct {
 	Preview autoPreview   `json:"preview"`
 }
 
+// 同传房间状态
+
+type ChangeStyleBody struct {
+	Subtitle  string `json:"subtitle"`
+	Origin    string `json:"origin"`
+	Reversed  bool   `json:"reversed"`
+	Bilingual bool   `json:"bilingual"`
+}
+
 // c2s -> client to server
 // s2c -> server to client
 
@@ -88,8 +97,6 @@ const (
 	c2sCmdSendSubtitle       string = "sendSubtitle"
 	c2sCmdSendSubtitleDirect string = "sendSubtitleDirect"
 	c2sCmdChangeStyle        string = "changeStyle"
-	c2sCmdChangeBilingual    string = "changeBilingual"
-	c2sCmdChangeReversed     string = "changeReversed"
 )
 const (
 	c2sCmdGetAutoLists     string = "getRoomAutoLists"
@@ -127,8 +134,6 @@ const (
 	s2cCmdSendSubtitle       s2cCmds = "sSendSubtitle"
 	s2cCmdSendSubtitleDirect s2cCmds = "sSendSubtitleDirect"
 	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
-	s2cCmdChangeBilingual    s2cCmds = "sChangeBilingual"
-	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
 )
 const (
 	s2cCmdGetAutoLists      s2cCmds = "sGetRoomAutoLists"

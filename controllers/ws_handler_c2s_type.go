@@ -95,24 +95,7 @@ type c2sSendSubtitleDirect struct {
 
 type c2sChangeStyle struct {
 	c2sHead
-	Body struct {
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
-}
-
-type c2sChangeBilingual struct {
-	c2sHead
-	Body struct {
-		Bilingual bool `json:"bilingual"`
-	} `json:"body"`
-}
-
-type c2sChangeReversed struct {
-	c2sHead
-	Body struct {
-		Reversed bool `json:"reversed"`
-	} `json:"body"`
+	Body ChangeStyleBody `json:"body"`
 }
 
 // 以下为auto page

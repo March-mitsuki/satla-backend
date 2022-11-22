@@ -204,24 +204,6 @@ func (s subscription) readPump() {
 			}
 			WsHub.broadcast <- m
 
-		case c2sCmdChangeBilingual:
-			logger.Nomal("ws", "c2s: Cmd Change Bilingual")
-			err := m.handleChangeBilingual()
-			if err != nil {
-				logger.Err("ws", fmt.Sprintf("change bilingual err %v \n", err))
-				return
-			}
-			WsHub.broadcast <- m
-
-		case c2sCmdChangeReversed:
-			logger.Nomal("ws", "c2s: Cmd Change Reversed")
-			err := m.handleChangeReversed()
-			if err != nil {
-				logger.Err("ws", fmt.Sprintf("change reversed err %v \n", err))
-				return
-			}
-			WsHub.broadcast <- m
-
 		case c2sCmdGetAutoLists:
 			// 从这里往下是auto page
 			logger.Nomal("ws", "c2s Cmd Get Auto Lists")
@@ -386,12 +368,14 @@ func (s subscription) readPump() {
 			WsHub.broadcast <- m
 
 		case c2sCmdHeartBeat:
-			logger.Info(
-				"ws",
-				"heart beat",
-				fmt.Sprintf("room: %v, user: %v", s.room, cUname),
-				fmt.Sprintf("now allAutoCtxs: \n==%v==\n", allAutoCtxs),
-			)
+			if os.Getenv("GIN_MODE") != "release" {
+				logger.Info(
+					"ws",
+					"heart beat",
+					fmt.Sprintf("room: %v, user: %v", s.room, cUname),
+					fmt.Sprintf("now allAutoCtxs: \n==%v==\n", allAutoCtxs),
+				)
+			}
 			WsHub.castself <- m
 
 		default:

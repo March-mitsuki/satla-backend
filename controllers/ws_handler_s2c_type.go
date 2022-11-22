@@ -101,29 +101,7 @@ type s2cChangeStyle struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
-	Body struct {
-		Reversed bool   `json:"reverse"`
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
-}
-
-type s2cChangeBilingual struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Bilingual bool `json:"bilingual"`
-	} `json:"body"`
-}
-
-type s2cChangeReversed struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Reversed bool `json:"reversed"`
-	} `json:"body"`
+	Body ChangeStyleBody `json:"body"`
 }
 
 // 以下为auto page

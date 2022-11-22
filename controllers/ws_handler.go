@@ -567,68 +567,7 @@ func (m *message) handleChangeStyle() error {
 		}{
 			Cmd: s2cCmdChangeStyle,
 		},
-		Body: struct {
-			Reversed bool   "json:\"reverse\""
-			Subtitle string "json:\"subtitle\""
-			Origin   string "json:\"origin\""
-		}{
-			Subtitle: wsData.Body.Subtitle,
-			Origin:   wsData.Body.Origin,
-		},
-	}
-
-	data, marshalErr := json.Marshal(&_data)
-	if marshalErr != nil {
-		return marshalErr
-	}
-	m.data = data
-	return nil
-}
-
-func (m *message) handleChangeBilingual() error {
-	var wsData c2sChangeBilingual
-	unmarshalErr := json.Unmarshal(m.data, &wsData)
-	if unmarshalErr != nil {
-		return unmarshalErr
-	}
-	_data := s2cChangeBilingual{
-		Head: struct {
-			Cmd s2cCmds "json:\"cmd\""
-		}{
-			Cmd: s2cCmdChangeBilingual,
-		},
-		Body: struct {
-			Bilingual bool "json:\"bilingual\""
-		}{
-			Bilingual: wsData.Body.Bilingual,
-		},
-	}
-
-	data, marshalErr := json.Marshal(&_data)
-	if marshalErr != nil {
-		return marshalErr
-	}
-	m.data = data
-	return nil
-}
-
-func (m *message) handleChangeReversed() error {
-	var wsData c2sChangeReversed
-	unmarshalErr := json.Unmarshal(m.data, &wsData)
-	if unmarshalErr != nil {
-		return unmarshalErr
-	}
-	_data := s2cChangeReversed{
-		Head: struct {
-			Cmd s2cCmds "json:\"cmd\""
-		}{
-			Cmd: s2cCmdChangeReversed,
-		},
-		Body: struct {
-			Reversed bool "json:\"reversed\""
-		}{
-			Reversed: wsData.Body.Reversed,
-		},
+		Body: wsData.Body,
 	}
 
 	data, marshalErr := json.Marshal(&_data)
