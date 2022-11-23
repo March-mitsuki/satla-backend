@@ -368,6 +368,14 @@ func (s subscription) readPump() {
 				return
 			}
 
+		case c2sCmdBatchAddSubs:
+			logger.Nomal("ws", "c2s Cmd Batch Add Subs")
+			err := m.handleBatchAddSubs()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("batch add subs err: %v", err))
+				return
+			}
+
 		case c2sCmdHeartBeat:
 			if os.Getenv("GIN_MODE") != "release" {
 				logger.Info(

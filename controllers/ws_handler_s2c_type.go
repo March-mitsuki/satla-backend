@@ -206,6 +206,15 @@ type s2cChangeAutoMemo struct {
 	} `json:"body"`
 }
 
+type s2cBatchAddSubs struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status bool `json:"status"`
+	} `json:"body"`
+}
+
 type s2cHeartBeat struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`

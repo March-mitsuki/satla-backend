@@ -99,6 +99,7 @@ const (
 	c2sCmdChangeStyle        string = "changeStyle"
 	c2sCmdGetNowRoomStyle    string = "getNowRoomStyle"
 	c2sCmdGetNowRoomSub      string = "getNowRoomSub"
+	c2sCmdBatchAddSubs       string = "batchAddSubs"
 )
 const (
 	c2sCmdGetAutoLists     string = "getRoomAutoLists"
@@ -136,6 +137,7 @@ const (
 	s2cCmdSendSubtitle       s2cCmds = "sSendSubtitle"
 	s2cCmdSendSubtitleDirect s2cCmds = "sSendSubtitleDirect"
 	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
+	s2cCmdBatchAddSubs       s2cCmds = "sBatchAddSubs"
 )
 const (
 	s2cCmdGetAutoLists      s2cCmds = "sGetRoomAutoLists"

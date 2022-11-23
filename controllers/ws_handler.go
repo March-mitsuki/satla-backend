@@ -293,7 +293,7 @@ func (m *message) handleAddTranslatedSub() error {
 	if unmarshalErr != nil {
 		return unmarshalErr
 	}
-	// 这里收到的subtitle的id和project_id为0, 需要额外操作
+	// 这里收到的subtitle的id为0, 需要额外操作
 	newSub, dbErr := db.CreateTranslatedSub(
 		wsData.Body.NewSubtitle,
 	)
@@ -747,6 +747,55 @@ func (m *message) handleGetNowRoomSub() error {
 			Subtitle: sub,
 		},
 	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	m.data = data
+
+	WsHub.castself <- *m
+
+	return nil
+}
+
+func (m *message) handleBatchAddSubs() error {
+	var wsData c2sBatchAddSubs
+	unmarshalErr := json.Unmarshal(m.data, &wsData)
+	if unmarshalErr != nil {
+		return unmarshalErr
+	}
+
+	var _data s2cBatchAddSubs
+
+	dbErr := db.BatchAddSubs(wsData.Body.Subtitles)
+	if dbErr != nil {
+		_data = s2cBatchAddSubs{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdBatchAddSubs,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+			}{
+				Status: false,
+			},
+		}
+	} else {
+		_data = s2cBatchAddSubs{
+			Head: struct {
+				Cmd s2cCmds "json:\"cmd\""
+			}{
+				Cmd: s2cCmdBatchAddSubs,
+			},
+			Body: struct {
+				Status bool "json:\"status\""
+			}{
+				Status: true,
+			},
+		}
+	}
+
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		return marshalErr

@@ -165,6 +165,13 @@ type c2sGetNowRoomSub struct {
 	} `json:"body"`
 }
 
+type c2sBatchAddSubs struct {
+	c2sHead
+	Body struct {
+		Subtitles []model.Subtitle `json:"subtitles"`
+	} `json:"body"`
+}
+
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {
