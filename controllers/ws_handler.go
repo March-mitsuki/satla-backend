@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -813,6 +814,20 @@ func (m *message) handleHeartBeat() error {
 	unmarshalErr := json.Unmarshal(m.data, &wsData)
 	if unmarshalErr != nil {
 		return unmarshalErr
+	}
+	var dbRoomType uint
+	if wsData.Body.RoomType == auto {
+		dbRoomType = 2
+	} else if wsData.Body.RoomType == nomal {
+		dbRoomType = 1
+	} else {
+		return errors.New("room type must be auto or nomal")
+	}
+
+	err := db.CheckWsroomType(dbRoomType, wsData.Body.RoomId)
+
+	if err != nil {
+		return err
 	}
 
 	_data := s2cHeartBeat{

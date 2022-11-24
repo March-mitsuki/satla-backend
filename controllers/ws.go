@@ -385,7 +385,11 @@ func (s subscription) readPump() {
 					fmt.Sprintf("now allAutoCtxs: \n==%v==\n", allAutoCtxs),
 				)
 			}
-			WsHub.castself <- m
+			err := m.handleHeartBeat()
+			if err != nil {
+				logger.Err("ws", fmt.Sprintf("heart beat check err: %v", err))
+				return
+			}
 
 		default:
 			logger.Err("ws", fmt.Sprintf("\n --undefined cmd-- \n %+v \n", string(msg)))
@@ -429,7 +433,10 @@ func WsController(c *gin.Context, wsroom string) {
 		fmt.Println("ws close by ws controller")
 	}()
 
-	conn := &connection{send: make(chan []byte, 256), ws: ws}
+	conn := &connection{
+		send: make(chan []byte, 1024),
+		ws:   ws,
+	}
 	sub := subscription{conn: conn, room: wsroom}
 	WsHub.register <- sub
 

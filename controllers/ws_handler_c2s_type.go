@@ -174,9 +174,19 @@ type c2sGetNowRoomSub struct {
 	} `json:"body"`
 }
 
+// heartbeat用于检测当前连接房间的type与连接状态, 会在onopen的时候发送
+// 并且每30秒由client发给server一次
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {
-		Obj string `json:"obj"`
+		RoomType RoomType `json:"room_type"`
+		RoomId   uint     `json:"room_id"`
 	} `json:"body"`
 }
+
+type RoomType string
+
+const (
+	nomal RoomType = "nomal"
+	auto  RoomType = "auto"
+)

@@ -553,3 +553,18 @@ func BatchAddSubs(subs []model.Subtitle) error {
 	}
 	return nil
 }
+
+func CheckWsroomType(roomType uint, roomId uint) error {
+	if roomType != 1 && roomType != 2 {
+		return errors.New("not on room type")
+	}
+	var room model.Room
+	findResult := Mdb.First(&room, roomId)
+	if findResult.Error != nil {
+		return findResult.Error
+	}
+	if roomType != room.RoomType {
+		return errors.New("not match the current room type")
+	}
+	return nil
+}

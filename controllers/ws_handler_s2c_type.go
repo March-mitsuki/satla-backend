@@ -235,6 +235,7 @@ type s2cChangeAutoMemo struct {
 	} `json:"body"`
 }
 
+// 心跳目前只做检查不返回给client任何数据
 type s2cHeartBeat struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
