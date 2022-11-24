@@ -105,6 +105,20 @@ type c2sBatchAddSubs struct {
 	} `json:"body"`
 }
 
+type c2sGetNowRoomStyle struct {
+	c2sHead
+	Body struct {
+		Wsroom string `json:"wsroom"`
+	} `json:"body"`
+}
+
+type c2sGetNowRoomSub struct {
+	c2sHead
+	Body struct {
+		Wsroom string `json:"wsroom"`
+	} `json:"body"`
+}
+
 //
 // 以下为auto page
 //
@@ -124,7 +138,24 @@ type c2sAddAutoSub struct {
 	} `json:"body"`
 }
 
-type c2sPlayStart struct {
+// 以下cmd均遵循这个格式, 但使用jsoniter.Get来获取元素, 不解构到struct中
+//
+// play start
+//
+// play end
+//
+// play forward (twice)
+//
+// play rewind (twice)
+//
+// play pause
+//
+// play restart
+//
+// auto to manual
+//
+// manual to auto
+type c2sPlayOperation struct {
 	c2sHead
 	Body struct {
 		ListId uint `json:"list_id"`
@@ -157,20 +188,6 @@ type c2sChangeAutoMemo struct {
 	Body struct {
 		ListId uint   `json:"list_id"`
 		Memo   string `json:"memo"`
-	} `json:"body"`
-}
-
-type c2sGetNowRoomStyle struct {
-	c2sHead
-	Body struct {
-		Wsroom string `json:"wsroom"`
-	} `json:"body"`
-}
-
-type c2sGetNowRoomSub struct {
-	c2sHead
-	Body struct {
-		Wsroom string `json:"wsroom"`
 	} `json:"body"`
 }
 

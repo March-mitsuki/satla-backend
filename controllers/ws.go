@@ -245,6 +245,8 @@ func (s subscription) readPump() {
 
 		case c2sCmdPlayEnd:
 			logger.Nomal("ws", "c2s Cmd Play End")
+			// end 会找到当前播放的ctx并发出done信号
+			// pause与手动挡的停止也使用这个借口
 			listId := json.Get(msg, "body", "list_id").ToUint()
 			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
 			if ctxErr != nil {
@@ -329,6 +331,30 @@ func (s subscription) readPump() {
 			logger.Nomal("ws", "c2s Cmd Play Send Space")
 			broadcastSendBlank(&m)
 
+		case c2sCmdAutoToManual:
+			logger.Nomal("ws", "c2s Cmd Auto To Manual")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: toManual,
+			}
+
+		case c2sCmdManualToAuto:
+			logger.Nomal("ws", "c2s Cmd Manual To Auto")
+			listId := json.Get(msg, "body", "list_id").ToUint()
+			currentCtx, ctxErr := allAutoCtxs.getCurrentCtx(s.room, listId)
+			if ctxErr != nil {
+				logger.Err("ws", fmt.Sprintf("cmd play end getCurrentCtx %v \n", ctxErr))
+				return
+			}
+			currentCtx.opeChan <- autoOpeData{
+				opeType: toAuto,
+			}
+
 		case c2sCmdDeleteAutoSub:
 			logger.Nomal("ws", "c2s Cmd Delete Auto Sub")
 			err := m.handleDeleteAutoSub()
@@ -347,7 +373,7 @@ func (s subscription) readPump() {
 			}
 
 		case c2sCmdRecoverPlayStat:
-			// 初始化房间会暂停当前房间内的播放(如果正在播放)
+			// 初始化房间会清除当前房间内的播放(如果正在播放)
 			// 并删除储存在redis中的房间stat, 以及全部的ctx
 			// 并更改该房间内所有List为未播放
 			logger.Nomal("ws", "c2s Cmd Recover Play Stat")

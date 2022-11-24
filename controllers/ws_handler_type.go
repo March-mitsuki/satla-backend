@@ -42,6 +42,8 @@ const (
 	rewindTwice
 	pause
 	restart
+	toManual
+	toAuto
 )
 
 type autoPreview struct {
@@ -60,6 +62,7 @@ const (
 	stopped playState = iota
 	playing
 	paused
+	manually
 )
 
 type autoPlayState struct {
@@ -117,6 +120,8 @@ const (
 	c2sCmdGetAutoPlayStat  string = "getAutoPlayStat"
 	c2sCmdRecoverPlayStat  string = "recoverAutoPlayStat"
 	c2sCmdChangeAutoMemo   string = "changeAutoMemo"
+	c2sCmdAutoToManual     string = "autoToManual"
+	c2sCmdManualToAuto     string = "manualToAuto"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -153,5 +158,7 @@ const (
 	s2cCmdGetAutoPlayStat   s2cCmds = "sGetAutoPlayStat"
 	s2cCmdRecoverPlayStat   s2cCmds = "sRecoverAutoPlayStat"
 	s2cCmdChangeAutoMemo    s2cCmds = "sChangeAutoMemo"
+	s2cCmdAutoToManual      s2cCmds = "sAutoToManual"
+	s2cCmdManualToAuto      s2cCmds = "sManualToAuto"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

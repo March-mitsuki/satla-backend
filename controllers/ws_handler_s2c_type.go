@@ -162,25 +162,15 @@ type s2cAutoPreviewChange struct {
 	Body autoPreview `json:"body"`
 }
 
-type s2cAutoPlayStart struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		ListId uint `json:"list_id"`
-	} `json:"body"`
-}
-
-type s2cAutoPlayPause struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		ListId uint `json:"list_id"`
-	} `json:"body"`
-}
-
-type s2cAutoPlayRestart struct {
+/**
+ * 以下cmd的回复均遵循这个格式, 但是head的cmd不同
+ * play start
+ * play pause
+ * play restart
+ * auto to manual
+ * manual to auto
+ */
+type s2cAutoPlayOpeRes struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
