@@ -452,11 +452,12 @@ LOOP:
 			case pause:
 				logger.Info("sleep", "pause now")
 				t.Stop()
+				broadcastAutoPlayPause(m, (*autoSubs)[0].ListId)
 				// set redis for room state checker
 				rdbKey := stat.MakeAutoRdbKey(m.room)
 				rdbValue := autoPlayState{
 					Wsroom:  m.room,
-					State:   playing,
+					State:   paused,
 					ListId:  (*autoSubs)[0].ListId,
 					NowSub:  (*autoSubs)[ca.adder(0)],
 					Preview: makeAutoPreview(autoSubs, ca.adder(0)),
@@ -475,6 +476,7 @@ LOOP:
 					o := <-ope
 					if o.opeType == restart {
 						go autoPlayLoop(ctx, ca, m, autoSubs, wg, ope)
+						broadcastAutoPlayRestart(m, (*autoSubs)[0].ListId)
 						break
 					}
 				}
@@ -548,6 +550,36 @@ func broadcastAutoPlayEnd(m *message) {
 			Data: "",
 		},
 	}
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("broadcast auto play end: %v \n", marshalErr))
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+	return
+}
+
+func broadcastAutoPlayPause(m *message, listId uint) {
+	_data := s2cAutoPlayPause{}
+	_data.Head.Cmd = s2cCmdAutoPlayPause
+	_data.Body.ListId = listId
+
+	data, marshalErr := json.Marshal(&_data)
+	if marshalErr != nil {
+		logger.Err("autoPlay", fmt.Sprintf("broadcast auto play end: %v \n", marshalErr))
+		return
+	}
+	m.data = data
+	WsHub.broadcast <- *m
+	return
+}
+
+func broadcastAutoPlayRestart(m *message, listId uint) {
+	_data := s2cAutoPlayRestart{}
+	_data.Head.Cmd = s2cCmdAutoPlayRestart
+	_data.Body.ListId = listId
+
 	data, marshalErr := json.Marshal(&_data)
 	if marshalErr != nil {
 		logger.Err("autoPlay", fmt.Sprintf("broadcast auto play end: %v \n", marshalErr))

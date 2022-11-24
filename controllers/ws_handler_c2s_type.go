@@ -98,7 +98,16 @@ type c2sChangeStyle struct {
 	Body ChangeStyleBody `json:"body"`
 }
 
+type c2sBatchAddSubs struct {
+	c2sHead
+	Body struct {
+		Subtitles []model.Subtitle `json:"subtitles"`
+	} `json:"body"`
+}
+
+//
 // 以下为auto page
+//
 
 type c2sGetAutoLists struct {
 	c2sHead
@@ -162,13 +171,6 @@ type c2sGetNowRoomSub struct {
 	c2sHead
 	Body struct {
 		Wsroom string `json:"wsroom"`
-	} `json:"body"`
-}
-
-type c2sBatchAddSubs struct {
-	c2sHead
-	Body struct {
-		Subtitles []model.Subtitle `json:"subtitles"`
 	} `json:"body"`
 }
 

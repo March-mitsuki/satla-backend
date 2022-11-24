@@ -104,7 +104,18 @@ type s2cChangeStyle struct {
 	Body ChangeStyleBody `json:"body"`
 }
 
+type s2cBatchAddSubs struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		Status bool `json:"status"`
+	} `json:"body"`
+}
+
+//
 // 以下为auto page
+//
 
 type s2cGetAutoLists struct {
 	Head struct {
@@ -160,12 +171,30 @@ type s2cAutoPlayStart struct {
 	} `json:"body"`
 }
 
+type s2cAutoPlayPause struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
+type s2cAutoPlayRestart struct {
+	Head struct {
+		Cmd s2cCmds `json:"cmd"`
+	} `json:"head"`
+	Body struct {
+		ListId uint `json:"list_id"`
+	} `json:"body"`
+}
+
 type s2cAutoPlayEnd struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Data interface{} `json:"data"`
+		Data interface{} `json:"data"` // 因为end会直接停止整个房间的播放所以不需要listId
 	} `json:"body"`
 }
 
@@ -203,15 +232,6 @@ type s2cChangeAutoMemo struct {
 		Status bool   `json:"status"`
 		ListId uint   `json:"list_id"`
 		Memo   string `json:"memo"`
-	} `json:"body"`
-}
-
-type s2cBatchAddSubs struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Status bool `json:"status"`
 	} `json:"body"`
 }
 
