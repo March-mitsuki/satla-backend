@@ -1,6 +1,12 @@
 package controllers
 
-import "github.com/gorilla/websocket"
+import (
+	"context"
+
+	"github.com/gorilla/websocket"
+)
+
+type WsCtx context.Context
 
 type connection struct {
 	ws   *websocket.Conn

@@ -9,6 +9,7 @@ import (
 
 	"github.com/March-mitsuki/satla-backend/controllers"
 	"github.com/March-mitsuki/satla-backend/controllers/db"
+	"github.com/March-mitsuki/satla-backend/utils/logger"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -18,14 +19,14 @@ import (
 )
 
 func loadDotenv() error {
-	// 读取VVVRD_ENV和GIN_MODE, 若都为空则设置为开发模式
+	// 读取SATLA_ENV和GIN_MODE, 若都为空则设置为开发模式
 	// 如果
 	const (
 		development string = "development"
 		production  string = "production"
 		test        string = "test"
 	)
-	env := os.Getenv("VVVRD_ENV")
+	env := os.Getenv("SATLA_ENV")
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "release" && env == "" {
 		env = production
@@ -43,37 +44,37 @@ func loadDotenv() error {
 		if err != nil {
 			localErr := godotenv.Load(".env." + env + ".local")
 			if localErr != nil {
-				fmt.Println("[error] development moed .env file is undefined")
+				logger.Err("[error]", "development moed .env file is undefined")
 				return localErr
 			}
 		}
-		fmt.Println("[notice] dotenv is runnning on 'dev' mode")
+		logger.Warn("[notice]", "dotenv is runnning on 'dev' mode")
 	case production:
 		err := godotenv.Load(".env." + env)
 		if err != nil {
 			localErr := godotenv.Load(".env." + env + ".local")
 			if localErr != nil {
-				fmt.Println("[error] production moed .env file is undefined")
+				logger.Err("[error]", "production moed .env file is undefined")
 				return localErr
 			}
 		}
-		fmt.Println("[notice] dotenv is runnning on 'production' mode")
+		logger.Warn("[notice]", "dotenv is runnning on 'production' mode")
 	case test:
 		err := godotenv.Load(".env." + env)
 		if err != nil {
 			localErr := godotenv.Load(".env." + env + ".local")
 			if localErr != nil {
-				fmt.Println("[error] test moed .env file is undefined")
+				logger.Err("[error]", "test moed .env file is undefined")
 				return localErr
 			}
 		}
-		fmt.Println("[notice] dotenv is runnning on 'test' mode")
+		logger.Warn("[notice]", "dotenv is runnning on 'test' mode")
 	}
 	err := godotenv.Load()
 	if err != nil {
 		localErr := godotenv.Load(".env.local")
 		if localErr != nil {
-			fmt.Println("[notice] default .env file is undifine")
+			logger.Warn("[notice]", "default .env file is undifine")
 		}
 	}
 	return nil
@@ -193,8 +194,10 @@ func main() {
 
 	// url -> /admin, 访问后台页面时的检测
 	admin := r.Group("/admin")
-	admin.Use(controllers.CheckLoginMidllewarePage())
-	admin.Use(controllers.CheckAdminMiddlewarePage())
+	if os.Getenv("GIN_MODE") == "release" {
+		admin.Use(controllers.CheckLoginMidllewarePage())
+		admin.Use(controllers.CheckAdminMiddlewarePage())
+	}
 	admin.GET("*all", directAccess)
 
 	r.NoRoute(func(c *gin.Context) {

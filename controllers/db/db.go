@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/March-mitsuki/satla-backend/controllers/password"
 	"github.com/March-mitsuki/satla-backend/model"
+	"github.com/March-mitsuki/satla-backend/utils/logger"
 
 	"github.com/go-redis/redis/v9"
 	"gorm.io/driver/mysql"
@@ -209,7 +212,7 @@ func CreateTranslatedSub(sub model.Subtitle) (model.Subtitle, error) {
 				),
 			)
 			if orderResults.Error != nil {
-				panic(orderResults.Error)
+				panic(fmt.Sprintf("update subtitle order to sql err: %v\n", orderResults.Error))
 			}
 			return orderResults
 		})
@@ -499,6 +502,69 @@ func ChangeAutoMemo(listId uint, memo string) error {
 	result := Mdb.Model(&model.AutoList{}).Where("id = ?", listId).Update("memo", memo)
 	if result.Error != nil {
 		return result.Error
+	}
+	return nil
+}
+
+func BatchAddSubs(subs []model.Subtitle) error {
+	roomId := subs[0].RoomId
+	err := Mdb.Transaction(func(tx *gorm.DB) error {
+		var room model.Room
+		searchResult := tx.First(&room, roomId)
+		if searchResult.Error != nil {
+			return searchResult.Error
+		}
+		createResult := tx.Create(&subs)
+		if createResult.Error != nil {
+			return createResult.Error
+		}
+		var subsIdStr []string
+		for _, v := range subs {
+			subsIdStr = append(subsIdStr, strconv.FormatUint(uint64(v.ID), 10))
+		}
+		jsonStr := strings.Join(subsIdStr, ",")
+		sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			orderResults := tx.Model(
+				&model.SubtitleOrder{},
+			).Where(
+				"room_id = ?",
+				roomId,
+			).Update(
+				"order",
+				gorm.Expr(
+					"CONCAT(`order`, ?)", // 因为gorm会把string自动加单引号,所以这里去掉?两边的单引号
+					jsonStr+",",
+				),
+			)
+			if orderResults.Error != nil {
+				panic(fmt.Sprintf("update subtitle order to sql err: %v\n", orderResults.Error))
+			}
+			return orderResults
+		})
+		logger.Info("db", fmt.Sprintf("tosql: %v", sql))
+		sqlResult := tx.Exec(sql)
+		if sqlResult.Error != nil {
+			return sqlResult.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckWsroomType(roomType uint, roomId uint) error {
+	if roomType != 1 && roomType != 2 {
+		return errors.New("not on room type")
+	}
+	var room model.Room
+	findResult := Mdb.First(&room, roomId)
+	if findResult.Error != nil {
+		return findResult.Error
+	}
+	if roomType != room.RoomType {
+		return errors.New("not match the current room type")
 	}
 	return nil
 }

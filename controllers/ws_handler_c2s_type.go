@@ -95,27 +95,33 @@ type c2sSendSubtitleDirect struct {
 
 type c2sChangeStyle struct {
 	c2sHead
-	Body struct {
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
+	Body ChangeStyleBody `json:"body"`
 }
 
-type c2sChangeBilingual struct {
+type c2sBatchAddSubs struct {
 	c2sHead
 	Body struct {
-		Bilingual bool `json:"bilingual"`
+		Subtitles []model.Subtitle `json:"subtitles"`
 	} `json:"body"`
 }
 
-type c2sChangeReversed struct {
+type c2sGetNowRoomStyle struct {
 	c2sHead
 	Body struct {
-		Reversed bool `json:"reversed"`
+		Wsroom string `json:"wsroom"`
 	} `json:"body"`
 }
 
+type c2sGetNowRoomSub struct {
+	c2sHead
+	Body struct {
+		Wsroom string `json:"wsroom"`
+	} `json:"body"`
+}
+
+//
 // 以下为auto page
+//
 
 type c2sGetAutoLists struct {
 	c2sHead
@@ -132,7 +138,24 @@ type c2sAddAutoSub struct {
 	} `json:"body"`
 }
 
-type c2sPlayStart struct {
+// 以下cmd均遵循这个格式, 但使用jsoniter.Get来获取元素, 不解构到struct中
+//
+// play start
+//
+// play end
+//
+// play forward (twice)
+//
+// play rewind (twice)
+//
+// play pause
+//
+// play restart
+//
+// auto to manual
+//
+// manual to auto
+type c2sPlayOperation struct {
 	c2sHead
 	Body struct {
 		ListId uint `json:"list_id"`
@@ -168,9 +191,19 @@ type c2sChangeAutoMemo struct {
 	} `json:"body"`
 }
 
+// heartbeat用于检测当前连接房间的type与连接状态, 会在onopen的时候发送
+// 并且每30秒由client发给server一次
 type c2sHeartBeat struct {
 	c2sHead
 	Body struct {
-		Obj string `json:"obj"`
+		RoomType RoomType `json:"room_type"`
+		RoomId   uint     `json:"room_id"`
 	} `json:"body"`
 }
+
+type RoomType string
+
+const (
+	nomal RoomType = "nomal"
+	auto  RoomType = "auto"
+)

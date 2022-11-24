@@ -42,6 +42,8 @@ const (
 	rewindTwice
 	pause
 	restart
+	toManual
+	toAuto
 )
 
 type autoPreview struct {
@@ -60,6 +62,7 @@ const (
 	stopped playState = iota
 	playing
 	paused
+	manually
 )
 
 type autoPlayState struct {
@@ -68,6 +71,15 @@ type autoPlayState struct {
 	ListId  uint          `json:"list_id"`
 	NowSub  model.AutoSub `json:"now_sub"`
 	Preview autoPreview   `json:"preview"`
+}
+
+// 同传房间状态
+
+type ChangeStyleBody struct {
+	Subtitle  string `json:"subtitle"`
+	Origin    string `json:"origin"`
+	Reversed  bool   `json:"reversed"`
+	Bilingual bool   `json:"bilingual"`
 }
 
 // c2s -> client to server
@@ -88,8 +100,9 @@ const (
 	c2sCmdSendSubtitle       string = "sendSubtitle"
 	c2sCmdSendSubtitleDirect string = "sendSubtitleDirect"
 	c2sCmdChangeStyle        string = "changeStyle"
-	c2sCmdChangeBilingual    string = "changeBilingual"
-	c2sCmdChangeReversed     string = "changeReversed"
+	c2sCmdGetNowRoomStyle    string = "getNowRoomStyle"
+	c2sCmdGetNowRoomSub      string = "getNowRoomSub"
+	c2sCmdBatchAddSubs       string = "batchAddSubs"
 )
 const (
 	c2sCmdGetAutoLists     string = "getRoomAutoLists"
@@ -107,6 +120,8 @@ const (
 	c2sCmdGetAutoPlayStat  string = "getAutoPlayStat"
 	c2sCmdRecoverPlayStat  string = "recoverAutoPlayStat"
 	c2sCmdChangeAutoMemo   string = "changeAutoMemo"
+	c2sCmdAutoToManual     string = "autoToManual"
+	c2sCmdManualToAuto     string = "manualToAuto"
 )
 const c2sCmdHeartBeat string = "heartBeat"
 
@@ -127,20 +142,23 @@ const (
 	s2cCmdSendSubtitle       s2cCmds = "sSendSubtitle"
 	s2cCmdSendSubtitleDirect s2cCmds = "sSendSubtitleDirect"
 	s2cCmdChangeStyle        s2cCmds = "sChangeStyle"
-	s2cCmdChangeBilingual    s2cCmds = "sChangeBilingual"
-	s2cCmdChangeReversed     s2cCmds = "sChangeReversed"
+	s2cCmdBatchAddSubs       s2cCmds = "sBatchAddSubs"
 )
 const (
 	s2cCmdGetAutoLists      s2cCmds = "sGetRoomAutoLists"
 	s2cCmdAddAutoSub        s2cCmds = "sAddAutoSub"
+	s2cCmdAutoPlayStart     s2cCmds = "sPlayStart"
+	s2cCmdAutoPlayEnd       s2cCmds = "sPlayEnd"
+	s2cCmdAutoPlayPause     s2cCmds = "sPlayPause"
+	s2cCmdAutoPlayRestart   s2cCmds = "sPlayRestart"
 	s2cCmdAutoPlayErr       s2cCmds = "autoPlayErr"
 	s2cCmdAutoChangeSub     s2cCmds = "autoChangeSub"
 	s2cCmdAutoPreviewChange s2cCmds = "autoPreviewChange"
-	s2cCmdAutoPlayStart     s2cCmds = "autoPlayStart"
-	s2cCmdAutoPlayEnd       s2cCmds = "autoPlayEnd"
 	s2cCmdDeleteAutoSub     s2cCmds = "sDeleteAutoSub"
 	s2cCmdGetAutoPlayStat   s2cCmds = "sGetAutoPlayStat"
 	s2cCmdRecoverPlayStat   s2cCmds = "sRecoverAutoPlayStat"
 	s2cCmdChangeAutoMemo    s2cCmds = "sChangeAutoMemo"
+	s2cCmdAutoToManual      s2cCmds = "sAutoToManual"
+	s2cCmdManualToAuto      s2cCmds = "sManualToAuto"
 )
 const s2cCmdHeartBeat s2cCmds = "sHeartBeat"

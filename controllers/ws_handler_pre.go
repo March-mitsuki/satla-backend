@@ -83,13 +83,13 @@ func (ctx autoCtxs) delCtx(wsroom string, listId uint) error {
 
 // cancel房间内所有的ctx, 并关闭ope chan, 最后删除整个房间
 func (ctx autoCtxs) delRoom(wsroom string) {
-	roomCtx, ok := ctx[wsroom]
+	roomCtxs, ok := ctx[wsroom]
 	if !ok {
 		return
 	}
-	for _, v := range roomCtx {
-		v.cancel()
-		close(v.opeChan)
+	for _, c := range roomCtxs {
+		c.cancel()
+		close(c.opeChan)
 	}
 	delete(ctx, wsroom)
 	return

@@ -101,32 +101,21 @@ type s2cChangeStyle struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
-	Body struct {
-		Reversed bool   `json:"reverse"`
-		Subtitle string `json:"subtitle"`
-		Origin   string `json:"origin"`
-	} `json:"body"`
+	Body ChangeStyleBody `json:"body"`
 }
 
-type s2cChangeBilingual struct {
+type s2cBatchAddSubs struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Bilingual bool `json:"bilingual"`
+		Status bool `json:"status"`
 	} `json:"body"`
 }
 
-type s2cChangeReversed struct {
-	Head struct {
-		Cmd s2cCmds `json:"cmd"`
-	} `json:"head"`
-	Body struct {
-		Reversed bool `json:"reversed"`
-	} `json:"body"`
-}
-
+//
 // 以下为auto page
+//
 
 type s2cGetAutoLists struct {
 	Head struct {
@@ -173,7 +162,15 @@ type s2cAutoPreviewChange struct {
 	Body autoPreview `json:"body"`
 }
 
-type s2cAutoPlayStart struct {
+/**
+ * 以下cmd的回复均遵循这个格式, 但是head的cmd不同
+ * play start
+ * play pause
+ * play restart
+ * auto to manual
+ * manual to auto
+ */
+type s2cAutoPlayOpeRes struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
@@ -187,7 +184,7 @@ type s2cAutoPlayEnd struct {
 		Cmd s2cCmds `json:"cmd"`
 	} `json:"head"`
 	Body struct {
-		Data interface{} `json:"data"`
+		Data interface{} `json:"data"` // 因为end会直接停止整个房间的播放所以不需要listId
 	} `json:"body"`
 }
 
@@ -228,6 +225,7 @@ type s2cChangeAutoMemo struct {
 	} `json:"body"`
 }
 
+// 心跳目前只做检查不返回给client任何数据
 type s2cHeartBeat struct {
 	Head struct {
 		Cmd s2cCmds `json:"cmd"`
