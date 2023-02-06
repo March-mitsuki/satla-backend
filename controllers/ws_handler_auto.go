@@ -180,6 +180,10 @@ func calc() calcData {
 		return num
 	}
 	sub := func(i int) int {
+		_num := num - i
+		if _num < 0 {
+			return num
+		}
 		num -= i
 		return num
 	}

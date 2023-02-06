@@ -141,6 +141,7 @@ func main() {
 	})
 	// 设置不需要进行login check的api
 	r.GET("/display/*roomid", directAccess)
+	r.GET("/auto/display/*roomid", directAccess)
 	r.GET("/login", directAccess)
 	r.GET("/signup", directAccess)
 	r.GET("/favicon.ico", func(c *gin.Context) {

@@ -99,7 +99,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				arg.RoomId,
 			).Update(
 				"order",
@@ -143,7 +143,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				arg.RoomId,
 			).Update(
 				"order",
