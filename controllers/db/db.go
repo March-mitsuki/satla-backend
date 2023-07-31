@@ -20,6 +20,7 @@ import (
 )
 
 var Mdb *gorm.DB
+var Rdb *redis.Client
 
 func ConnectionDB() error {
 	dns := os.Getenv("DB_DSN")
@@ -44,12 +45,16 @@ func ConnectionDB() error {
 		&model.AutoList{},
 		&model.AutoSub{},
 	)
+
+	rdbAddr := os.Getenv("REDIS_ADDR")
+	if rdbAddr == "" {
+		return errors.New("REDIS_ADDR is empty")
+	}
+	Rdb = redis.NewClient(&redis.Options{
+		Addr: rdbAddr,
+	})
 	return nil
 }
-
-var Rdb = redis.NewClient(&redis.Options{
-	Addr: "localhost:6379",
-})
 
 func GetRoomSubtitles(roomId uint) ([]model.Subtitle, string, error) {
 	var subtitles []model.Subtitle
@@ -99,7 +104,7 @@ func CreateSubtitleUp(arg ArgAddSubtitle) (uint, error) {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				arg.RoomId,
 			).Update(
 				"order",
@@ -143,7 +148,7 @@ func CreateSubtitleDown(arg ArgAddSubtitle) (uint, error) {
 			orderResults := tx.Model(
 				&model.SubtitleOrder{},
 			).Where(
-				"project_id = ?",
+				"room_id = ?",
 				arg.RoomId,
 			).Update(
 				"order",

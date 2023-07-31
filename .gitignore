@@ -20,3 +20,8 @@
 # dot env file
 *.local
 *.production
+
+log/
+*.log
+_docker_dev/mariadb/
+_docker_dev/redis/

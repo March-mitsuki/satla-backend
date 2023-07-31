@@ -42,7 +42,7 @@ func TestCreateSubtitleUp(t *testing.T) {
 		orderResults := tx.Model(
 			&model.SubtitleOrder{},
 		).Where(
-			"project_id = ?",
+			"room_id = ?",
 			arg.RoomId,
 		).Update(
 			"order",
@@ -74,7 +74,7 @@ func TestExpr(t *testing.T) {
 			1,
 		),
 	).Where(
-		"project_id = ?",
+		"room_id = ?",
 		1,
 	)
 }

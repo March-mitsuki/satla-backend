@@ -6,14 +6,20 @@ https://github.com/March-mitsuki/satla
 frontend here:
 https://github.com/March-mitsuki/satla-frontend
 
+# how to dev
+
+1. `docker compose -p satla -f ./_docker_dev/docker-compose.yaml up -d`
+2. set up `DB_DSN`, `CORS_ORIGIN`, `PORT` in `.env.development` file
+3. `go run .`
+
 ## how to use
 
 1. clone this repository
 1. `export GIN_MODE=release` export a environment variable to set gin mode
 1. create file named `.env.production.local` in root dir
-1. set up `DB_DSN` and `CORS_ORIGIN` in `.env.production.local` file
-1. `go build -tags=jsoniter .` build a production version
-1. `./vvvorld` run it
+2. set up `DB_DSN`, `CORS_ORIGIN`, `PORT` in `.env.production.local` file
+3. `go build -tags=jsoniter .` build a production version
+4. `./vvvorld` run it
 
 ## todo
 
