@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/March-mitsuki/satla-backend/controllers/db"
-	"github.com/March-mitsuki/satla-backend/controllers/password"
 	"github.com/March-mitsuki/satla-backend/model"
 
 	"github.com/gin-contrib/sessions"
@@ -58,25 +57,8 @@ func CreateNewUser(c *gin.Context) {
 		fmt.Println("未存在该user name,继续执行操作")
 	}
 
-	newPassHash, encryptErr := password.EncryptPassword(body.Password)
-	if encryptErr != nil {
-		fmt.Println("hash化密码失败")
-		jsonRes := jsonResponse{
-			-1,
-			statusSignupEncryptPassErr,
-			"encrypt password failed, please retry",
-		}
-		c.JSON(200, jsonRes)
-		return
-	}
-	newUser := model.User{
-		UserName:     body.UserName,
-		Email:        body.Email,
-		PasswordHash: newPassHash,
-		Permission:   &body.Permission,
-	}
-	createResult := db.Mdb.Create(&newUser)
-	if createResult.Error != nil {
+	createErr := db.CreateUser(body.Password, body.UserName, body.Email, body.Permission)
+	if createErr != nil {
 		fmt.Println("创建用户失败")
 		jsonRes := jsonResponse{
 			-1,
@@ -87,7 +69,6 @@ func CreateNewUser(c *gin.Context) {
 		return
 	}
 	c.Redirect(303, "/login")
-	return
 }
 
 func CreateNewProject(c *gin.Context) {

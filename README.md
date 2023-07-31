@@ -17,7 +17,7 @@ https://github.com/March-mitsuki/satla-frontend
 1. clone this repository
 1. `export GIN_MODE=release` export a environment variable to set gin mode
 1. create file named `.env.production.local` in root dir
-2. set up `DB_DSN`, `CORS_ORIGIN`, `PORT` in `.env.production.local` file
+2. set up `DB_DSN`, `CORS_ORIGIN`, `PORT`, `ROOT_PASSWORD`, `ROOT_EMAIL` in `.env.production.local` file
 3. `go build -tags=jsoniter .` build a production version
 4. `./vvvorld` run it
 

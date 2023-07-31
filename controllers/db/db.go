@@ -573,3 +573,22 @@ func CheckWsroomType(roomType uint, roomId uint) error {
 	}
 	return nil
 }
+
+func CreateUser(pass string, username string, email string, permmision uint) error {
+	newPassHash, encryptErr := password.EncryptPassword(pass)
+	if encryptErr != nil {
+		return encryptErr
+	}
+	newUser := model.User{
+		UserName:     username,
+		Email:        email,
+		PasswordHash: newPassHash,
+		Permission:   &permmision,
+	}
+	createResult := Mdb.Create(&newUser)
+	if createResult.Error != nil {
+		return createResult.Error
+	}
+
+	return nil
+}

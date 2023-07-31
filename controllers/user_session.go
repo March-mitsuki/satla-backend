@@ -30,7 +30,6 @@ func LoginUser(c *gin.Context) {
 		c.JSON(200, jsonRes)
 		return
 	}
-	// fmt.Printf("user login: %+v \n", body)
 
 	var search model.User
 	result := db.Mdb.Where("email = ?", body.Email).First(&search)
@@ -84,7 +83,6 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 	c.Redirect(303, "/")
-	return
 }
 
 func LogoutUser(c *gin.Context) {
@@ -100,7 +98,6 @@ func LogoutUser(c *gin.Context) {
 	s.Delete(cookieUserEmail)
 	s.Save()
 	c.Redirect(303, "/login")
-	return
 }
 
 func CheckLogin(c *gin.Context) (uint, error) {

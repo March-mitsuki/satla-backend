@@ -9,6 +9,7 @@ import (
 
 	"github.com/March-mitsuki/satla-backend/controllers"
 	"github.com/March-mitsuki/satla-backend/controllers/db"
+	"github.com/March-mitsuki/satla-backend/model"
 	"github.com/March-mitsuki/satla-backend/utils/logger"
 
 	"github.com/gin-contrib/cors"
@@ -88,7 +89,6 @@ func directAccess(c *gin.Context) {
 	} else {
 		c.File("./dist" + c.Request.RequestURI)
 	}
-	return
 }
 
 func main() {
@@ -137,7 +137,6 @@ func main() {
 			return
 		}
 		c.File("./dist")
-		return
 	})
 	// 设置不需要进行login check的api
 	r.GET("/display/*roomid", directAccess)
@@ -145,7 +144,6 @@ func main() {
 	r.GET("/signup", directAccess)
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File("./public/favicon.ico")
-		return
 	})
 
 	// 测试服务器是否正常运行
@@ -166,7 +164,6 @@ func main() {
 	r.GET("/ws/:wsroom", func(c *gin.Context) {
 		wsroom := c.Param("wsroom")
 		controllers.WsController(c, wsroom)
-		return
 	})
 
 	session := r.Group("/seesion")
@@ -212,8 +209,17 @@ func main() {
 			return
 		}
 		directAccess(c)
-		return
 	})
+
+	// create root user
+	rootUser := db.Mdb.First(&model.User{}, "email = ?", os.Getenv("ROOT_EMAIL"))
+	if rootUser.Error != nil {
+		// if root user not exist, create root user
+		if err := db.CreateUser(os.Getenv("ROOT_PASSWORD"), "root", os.Getenv("ROOT_EMAIL"), 2); err != nil {
+			fmt.Printf("\n [error] create root user err: %v \n", err)
+			panic("--- create root user error ---")
+		}
+	}
 
 	port := os.Getenv("PORT")
 	r.Run(fmt.Sprintf(":%v", port))
